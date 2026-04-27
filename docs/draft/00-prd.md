@@ -1,6 +1,6 @@
 **Project:** Greenhouse Gas Emissions Dashboard & API
 
-**Author:** Takoon Chiengtong
+**Author:** Takoon
 
 ---
 
