@@ -2,15 +2,15 @@
 
 **Author:** Takoon
 
-**Status:** Draft v1
+**Status:** Locked
 
 ---
 
 # 1. System Overview
 
-A single Next.js 16 application serves both the REST API and the dashboard UI, deployed to Vercel with PostgreSQL on Neon. The API exposes GHG emissions data sourced from Our World in Data (OWID), with role-gated CRUD for admins. The dashboard consumes the same API as any external client would, keeping a clean boundary between data layer and presentation.
+A single Next.js 16 application serves both the REST API and the dashboard UI, deployed to Vercel with PostgreSQL on Neon. The API exposes GHG emissions data seeded from the assignment CSV (`data_for_test.csv`, World Bank WDI extract), with role-gated CRUD for admins. The dashboard consumes the same API as any external client would, keeping a clean boundary between data layer and presentation.
 
-The architecture is deliberately monolithic for a 2-day build, but layered internally so that splitting API and UI into separate services later would not require rewriting business logic.
+The architecture is monolithic for a 2-day build, layered internally so that splitting API and UI into separate services later does not require rewriting business logic.
 
 ---
 
@@ -36,7 +36,7 @@ flowchart TB
     subgraph External["External Services"]
         Neon[(PostgreSQL<br/>Neon Serverless)]
         GitHub[GitHub OAuth]
-        OWID[OWID CSV<br/>Seed Source]
+        CSV[Assignment CSV<br/>Seed Source]
     end
 
     TQ -->|fetch| Proxy
@@ -46,17 +46,17 @@ flowchart TB
     API --> Lib
     Lib --> Neon
     Proxy -.->|verify session| GitHub
-    OWID -.->|one-time seed| Neon
+    CSV -.->|one-time seed| Neon
 
     classDef external fill:#fef3c7,stroke:#92400e
     classDef app fill:#dbeafe,stroke:#1e40af
-    class Neon,GitHub,OWID external
+    class Neon,GitHub,CSV external
     class UI,TQ,Proxy,Pages,API,Lib app
 ```
 
 **Reading the diagram:**
 
-The browser holds presentation state and a query cache. The Next.js app holds business logic, validation, and persistence. External services are isolated behind clear boundaries: Neon for data, GitHub for identity, OWID as a one-time seed source.
+The browser holds presentation state and a query cache. The Next.js app holds business logic, validation, and persistence. External services are isolated behind clear boundaries: Neon for data, GitHub for identity, the assignment CSV as a one-time seed source.
 
 ---
 
@@ -247,56 +247,7 @@ flowchart LR
 
 ---
 
-# 7. Key Architecture Decisions
-
-Five mini-ADRs covering decisions that a reviewer might question. Format: Context / Decision / Consequence.
-
-> Note: ADRs are inline here for the take-home repo. A cross-project ADR database in the Developer Brain is planned (see Projects DB → "Build ADR Database in Developer Brain"). When that lands, this section will be replaced with a linked database view filtered by Project.
-> 
-
-## ADR-001: Monolithic Next.js app over separate API + frontend
-
-**Context:** The brief asks for a REST API and a dashboard. These could be two services (Express + Vite/Next).
-
-**Decision:** Single Next.js 16 app serving both, with a clean internal layer boundary.
-
-**Consequence:** Faster ship, one deploy, one set of env vars, shared TypeScript types end to end. Tradeoff: coupling at the deploy level. If the API ever needs independent scaling, the layer boundary makes extraction straightforward.
-
-## ADR-002: PostgreSQL on Neon over MongoDB
-
-**Context:** Brief allows either. Data shape is country → year → emissions, with strong relational and aggregation patterns.
-
-**Decision:** PostgreSQL on Neon, accessed via Prisma.
-
-**Consequence:** Aggregations (year-over-year, sector totals) are trivial SQL. Strong typing flows from schema to TypeScript via Prisma. Neon's branching gives free preview-environment databases on Vercel. Tradeoff: less flexibility for unstructured data. Acceptable: emissions records are well-structured.
-
-## ADR-003: TanStack Query over RSC fetching for dashboard data
-
-**Context:** Next.js 16 supports server components fetching directly. We could skip a client cache.
-
-**Decision:** Dashboard pages use client components with TanStack Query; the home page and static content use RSC.
-
-**Consequence:** The country/year/gas dropdowns trigger refetches without page reloads, with built-in cache and revalidation. The chart-and-map UX feels instant on repeat selections. Tradeoff: more JavaScript shipped to the browser. Acceptable: dashboards are inherently interactive.
-
-## ADR-004: Auth.js v5 with GitHub OAuth over custom auth or Auth0
-
-**Context:** Brief lists auth as a bonus. Options: Auth.js, Clerk, Auth0, custom JWT.
-
-**Decision:** Auth.js v5 with GitHub OAuth provider, JWT sessions.
-
-**Consequence:** Zero infrastructure cost, no third-party dashboard to manage, integrates with Prisma adapter. Demo reviewers can sign in with their own GitHub. Tradeoff: GitHub-only restricts non-developer users. Acceptable: the demo audience is engineers.
-
-## ADR-005: Inline error mapping over try/catch in every handler
-
-**Context:** API needs consistent error responses. Could wrap each handler in try/catch or use a centralized error wrapper.
-
-**Decision:** Custom `ApiError` class plus a `withErrorHandler` HOF that wraps each route export. Handlers throw, the wrapper converts to JSON.
-
-**Consequence:** Route handlers stay flat and readable. Error shape is enforced in one place. Validation errors (Zod), authorization errors (`requireAdmin`), and not-found errors all flow through the same mapper. Tradeoff: one more abstraction. Acceptable: pays for itself by route #3.
-
----
-
-# 8. Boundaries: Out of Scope
+# 7. Boundaries: Out of Scope
 
 These are deliberately not built. Each is a 1-week extension from the current architecture, not a rewrite.
 
@@ -309,11 +260,9 @@ These are deliberately not built. Each is a 1-week extension from the current ar
 | Real-time updates | Out of scope; not in brief | Add Server-Sent Events route or Pusher integration |
 | Internationalization | English-only demo | Add `next-intl`, all UI strings already in components |
 
-This table is the seed for the README's "What I'd Do Next" section. Each item shows senior thinking without doing senior amounts of work.
-
 ---
 
-# 9. References
+# 8. References
 
 - Next.js 16 docs: https://nextjs.org/docs
 - Auth.js v5: https://authjs.dev
@@ -322,5 +271,6 @@ This table is the seed for the README's "What I'd Do Next" section. Each item sh
 - Sister docs:
     - `00 — PRD`
     - `01b — Conventions`
-    - `02 — Data Model` (next)
+    - `01c — ADRs`
+    - `02 — Data Model`
     - `03 — API Contracts`
