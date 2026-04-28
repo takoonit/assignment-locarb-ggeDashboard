@@ -1,135 +1,210 @@
-type JsonSchema = Record<string, unknown>;
+import {
+  OpenAPIRegistry,
+  OpenApiGeneratorV31,
+} from "@asteasolutions/zod-to-openapi";
+import "@/lib/zod-openapi";
+import { z } from "zod";
+import { API_ERROR_CODES } from "@/lib/api-utils";
+import {
+  countriesQuerySchema,
+  countryCodeSchema,
+  createCountryBodySchema,
+  createEmissionBodySchema,
+  createSectorShareBodySchema,
+  filterQuerySchema,
+  gasSchema,
+  mapQuerySchema,
+  nullableNumberSchema,
+  sectorQuerySchema,
+  trendQuerySchema,
+  updateCountryBodySchema,
+  updateEmissionBodySchema,
+  updateSectorShareBodySchema,
+  yearSchema,
+} from "@/lib/api-schemas";
 
-const errorCodes = [
-  "INVALID_PARAMS",
-  "UNAUTHENTICATED",
-  "FORBIDDEN",
-  "NOT_FOUND",
-  "CONFLICT",
-  "INTERNAL_ERROR",
-] as const;
+const registry = new OpenAPIRegistry();
 
-const gasValues = ["TOTAL", "CO2", "CH4", "N2O", "HFC", "PFC", "SF6"] as const;
-
-const countryCodeSchema = {
-  type: "string",
-  pattern: "^[A-Z]{3}$",
-  example: "THA",
-};
-
-const yearSchema = {
-  type: "integer",
-  minimum: 1990,
-  maximum: 2030,
-  example: 2020,
-};
-
-const nullableNumberSchema = {
-  type: ["number", "null"],
-};
-
-const gasSchema = {
-  type: "string",
-  enum: gasValues,
-  example: "CO2",
-};
-
-const countrySummarySchema = {
-  type: "object",
-  required: ["code", "name"],
-  properties: {
-    code: countryCodeSchema,
-    name: { type: "string", example: "Thailand" },
+const IdParam = z.string().min(1).openapi({
+  param: {
+    name: "id",
+    in: "path",
   },
-};
+  example: "country_id",
+});
 
-const countrySchema = {
-  allOf: [
-    countrySummarySchema,
-    {
-      type: "object",
-      required: ["isRegion"],
-      properties: {
-        isRegion: { type: "boolean", example: false },
-      },
-    },
-  ],
-};
+const CountryCode = registry.register("CountryCode", countryCodeSchema);
+const Year = registry.register("Year", yearSchema);
+const Gas = registry.register("Gas", gasSchema);
+const NullableNumber = nullableNumberSchema;
 
-const persistedCountrySchema = {
-  allOf: [
-    countrySchema,
-    {
-      type: "object",
-      required: ["id"],
-      properties: {
-        id: { type: "string", example: "country_id" },
-      },
-    },
-  ],
-};
+const CountrySummary = registry.register(
+  "CountrySummary",
+  z.object({
+    code: CountryCode,
+    name: z.string().openapi({ example: "Thailand" }),
+  }),
+);
 
-const annualEmissionSchema = {
-  type: "object",
-  required: ["id", "countryCode", "year", "total", "co2", "ch4", "n2o", "hfc", "pfc", "sf6"],
-  properties: {
-    id: { type: "string", example: "annual_emission_id" },
-    countryCode: countryCodeSchema,
-    year: yearSchema,
-    total: nullableNumberSchema,
-    co2: nullableNumberSchema,
-    ch4: nullableNumberSchema,
-    n2o: nullableNumberSchema,
-    hfc: nullableNumberSchema,
-    pfc: nullableNumberSchema,
-    sf6: nullableNumberSchema,
-  },
-};
+const Country = registry.register(
+  "Country",
+  z.object({
+    code: CountryCode,
+    name: z.string().openapi({ example: "Thailand" }),
+    isRegion: z.boolean().openapi({ example: false }),
+  }),
+);
 
-const sectorShareSchema = {
-  type: "object",
-  required: [
-    "id",
-    "countryCode",
-    "year",
-    "transport",
-    "manufacturing",
-    "electricity",
-    "buildings",
-    "other",
-  ],
-  properties: {
-    id: { type: "string", example: "sector_share_id" },
-    countryCode: countryCodeSchema,
-    year: yearSchema,
-    transport: nullableNumberSchema,
-    manufacturing: nullableNumberSchema,
-    electricity: nullableNumberSchema,
-    buildings: nullableNumberSchema,
-    other: nullableNumberSchema,
-  },
-};
+const PersistedCountry = registry.register(
+  "PersistedCountry",
+  Country.extend({
+    id: z.string().openapi({ example: "country_id" }),
+  }),
+);
 
-const deletedSchema = {
-  type: "object",
-  required: ["deleted", "id"],
-  properties: {
-    deleted: { type: "boolean", const: true },
-    id: { type: "string" },
-  },
-};
+const AnnualEmission = registry.register(
+  "AnnualEmission",
+  z.object({
+    id: z.string().openapi({ example: "annual_emission_id" }),
+    countryCode: CountryCode,
+    year: Year,
+    total: NullableNumber,
+    co2: NullableNumber,
+    ch4: NullableNumber,
+    n2o: NullableNumber,
+    hfc: NullableNumber,
+    pfc: NullableNumber,
+    sf6: NullableNumber,
+  }),
+);
 
-const response = (schema: JsonSchema, description = "Successful response.") => ({
-  description,
+const SectorShare = registry.register(
+  "SectorShare",
+  z.object({
+    id: z.string().openapi({ example: "sector_share_id" }),
+    countryCode: CountryCode,
+    year: Year,
+    transport: NullableNumber,
+    manufacturing: NullableNumber,
+    electricity: NullableNumber,
+    buildings: NullableNumber,
+    other: NullableNumber,
+  }),
+);
+
+const DeleteResponse = registry.register(
+  "DeleteResponse",
+  z.object({
+    deleted: z.literal(true),
+    id: z.string(),
+  }),
+);
+
+const ErrorResponse = registry.register(
+  "ErrorResponse",
+  z.object({
+    error: z.object({
+      code: z.enum(API_ERROR_CODES),
+      details: z.record(z.string(), z.unknown()),
+    }),
+  }),
+);
+
+registry.register(
+  "SuccessResponse",
+  z.object({
+    data: z.unknown(),
+  }),
+);
+
+const TrendResponse = registry.register(
+  "TrendResponse",
+  z.object({
+    country: CountrySummary,
+    gas: Gas,
+    unit: z.literal("kt_co2e"),
+    points: z.array(
+      z.object({
+        year: Year,
+        value: NullableNumber,
+      }),
+    ),
+  }),
+);
+
+const MapResponse = registry.register(
+  "MapResponse",
+  z.object({
+    year: Year,
+    gas: Gas,
+    unit: z.literal("kt_co2e"),
+    countries: z.array(
+      z.object({
+        countryCode: CountryCode,
+        countryName: z.string(),
+        value: NullableNumber,
+      }),
+    ),
+  }),
+);
+
+const SectorBreakdownResponse = registry.register(
+  "SectorBreakdownResponse",
+  z.object({
+    country: CountrySummary,
+    year: Year,
+    unit: z.literal("percent"),
+    sectors: z.object({
+      transport: NullableNumber,
+      manufacturing: NullableNumber,
+      electricity: NullableNumber,
+      buildings: NullableNumber,
+      other: NullableNumber,
+    }),
+  }),
+);
+
+const FilteredEmissionResponse = registry.register(
+  "FilteredEmissionResponse",
+  z.object({
+    country: CountrySummary,
+    year: Year,
+    gas: Gas,
+    unit: z.literal("kt_co2e"),
+    value: NullableNumber,
+  }),
+);
+
+const CreateCountryBody = registry.register(
+  "CreateCountryBody",
+  createCountryBodySchema,
+);
+const UpdateCountryBody = registry.register(
+  "UpdateCountryBody",
+  updateCountryBodySchema,
+);
+const CreateEmissionBody = registry.register(
+  "CreateEmissionBody",
+  createEmissionBodySchema,
+);
+const UpdateEmissionBody = registry.register(
+  "UpdateEmissionBody",
+  updateEmissionBodySchema,
+);
+const CreateSectorShareBody = registry.register(
+  "CreateSectorShareBody",
+  createSectorShareBodySchema,
+);
+const UpdateSectorShareBody = registry.register(
+  "UpdateSectorShareBody",
+  updateSectorShareBodySchema,
+);
+
+const dataResponse = (schema: z.ZodType) => ({
+  description: "Successful response.",
   content: {
     "application/json": {
-      schema: {
-        type: "object",
-        required: ["data"],
-        properties: {
-          data: schema,
-        },
-      },
+      schema: z.object({ data: schema }),
     },
   },
 });
@@ -138,32 +213,12 @@ const errorResponse = (description: string) => ({
   description,
   content: {
     "application/json": {
-      schema: { $ref: "#/components/schemas/ErrorResponse" },
+      schema: ErrorResponse,
     },
   },
 });
 
-const queryParameter = (
-  name: string,
-  schema: JsonSchema,
-  required = false,
-  description?: string,
-) => ({
-  name,
-  in: "query",
-  required,
-  ...(description ? { description } : {}),
-  schema,
-});
-
-const pathParameter = (name: string) => ({
-  name,
-  in: "path",
-  required: true,
-  schema: { type: "string" },
-});
-
-const jsonBody = (schema: JsonSchema) => ({
+const jsonBody = (schema: z.ZodType) => ({
   required: true,
   content: {
     "application/json": {
@@ -172,8 +227,233 @@ const jsonBody = (schema: JsonSchema) => ({
   },
 });
 
+registry.registerPath({
+  method: "get",
+  path: "/api/openapi",
+  tags: ["Documentation"],
+  summary: "Get OpenAPI document",
+  responses: {
+    200: dataResponse(z.object({}).passthrough()),
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/docs",
+  tags: ["Documentation"],
+  summary: "View interactive API docs",
+  responses: {
+    200: {
+      description: "HTML API reference.",
+      content: { "text/html": { schema: z.string() } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/countries",
+  tags: ["Countries"],
+  summary: "List countries",
+  request: { query: countriesQuerySchema },
+  responses: {
+    200: dataResponse(z.array(Country)),
+    400: errorResponse("Invalid query parameters."),
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/countries",
+  tags: ["Countries"],
+  summary: "Create country",
+  request: { body: jsonBody(CreateCountryBody) },
+  responses: {
+    200: dataResponse(PersistedCountry),
+    400: errorResponse("Invalid body."),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    409: errorResponse("Country code already exists."),
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/countries/{id}",
+  tags: ["Countries"],
+  summary: "Update country",
+  request: { params: z.object({ id: IdParam }), body: jsonBody(UpdateCountryBody) },
+  responses: {
+    200: dataResponse(PersistedCountry),
+    400: errorResponse("Invalid id or body."),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Country does not exist."),
+    409: errorResponse("Country code already exists."),
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/countries/{id}",
+  tags: ["Countries"],
+  summary: "Delete country",
+  request: { params: z.object({ id: IdParam }) },
+  responses: {
+    200: dataResponse(DeleteResponse),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Country does not exist."),
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/emissions/trend",
+  tags: ["Emissions"],
+  summary: "Get emissions trend",
+  request: { query: trendQuerySchema },
+  responses: {
+    200: dataResponse(TrendResponse),
+    400: errorResponse("Invalid country, gas, or year range."),
+    404: errorResponse("Country does not exist."),
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/emissions/map",
+  tags: ["Emissions"],
+  summary: "Get emissions map",
+  request: { query: mapQuerySchema },
+  responses: {
+    200: dataResponse(MapResponse),
+    400: errorResponse("Invalid year, gas, or includeRegions value."),
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/emissions/sector",
+  tags: ["Emissions"],
+  summary: "Get sector breakdown",
+  request: { query: sectorQuerySchema },
+  responses: {
+    200: dataResponse(SectorBreakdownResponse),
+    400: errorResponse("Invalid country or year."),
+    404: errorResponse("Country does not exist."),
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/emissions/filter",
+  tags: ["Emissions"],
+  summary: "Get filtered emissions value",
+  request: { query: filterQuerySchema },
+  responses: {
+    200: dataResponse(FilteredEmissionResponse),
+    400: errorResponse("Invalid country, gas, or year."),
+    404: errorResponse("Country does not exist."),
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/emissions",
+  tags: ["Emissions"],
+  summary: "Create emissions record",
+  request: { body: jsonBody(CreateEmissionBody) },
+  responses: {
+    200: dataResponse(AnnualEmission),
+    400: errorResponse("Invalid body."),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Country code does not exist."),
+    409: errorResponse("Record already exists for this country and year."),
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/emissions/{id}",
+  tags: ["Emissions"],
+  summary: "Update emissions record",
+  request: { params: z.object({ id: IdParam }), body: jsonBody(UpdateEmissionBody) },
+  responses: {
+    200: dataResponse(AnnualEmission),
+    400: errorResponse("Invalid id or body."),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Emissions record does not exist."),
+    409: errorResponse("Updated year would create a duplicate."),
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/emissions/{id}",
+  tags: ["Emissions"],
+  summary: "Delete emissions record",
+  request: { params: z.object({ id: IdParam }) },
+  responses: {
+    200: dataResponse(DeleteResponse),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Emissions record does not exist."),
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/sector-shares",
+  tags: ["Sector Shares"],
+  summary: "Create sector share record",
+  request: { body: jsonBody(CreateSectorShareBody) },
+  responses: {
+    200: dataResponse(SectorShare),
+    400: errorResponse("Invalid body."),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Country code does not exist."),
+    409: errorResponse("Sector data already exists for this country and year."),
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/sector-shares/{id}",
+  tags: ["Sector Shares"],
+  summary: "Update sector share record",
+  request: { params: z.object({ id: IdParam }), body: jsonBody(UpdateSectorShareBody) },
+  responses: {
+    200: dataResponse(SectorShare),
+    400: errorResponse("Invalid id or body."),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Sector share record does not exist."),
+    409: errorResponse("Updated record would create a duplicate."),
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/sector-shares/{id}",
+  tags: ["Sector Shares"],
+  summary: "Delete sector share record",
+  request: { params: z.object({ id: IdParam }) },
+  responses: {
+    200: dataResponse(DeleteResponse),
+    401: errorResponse("Unauthenticated."),
+    403: errorResponse("Forbidden."),
+    404: errorResponse("Sector share record does not exist."),
+  },
+});
+
 export function generateOpenApiDocument() {
-  return {
+  const generator = new OpenApiGeneratorV31(registry.definitions);
+
+  return generator.generateDocument({
     openapi: "3.1.0",
     info: {
       title: "Lo-Carb GGE Dashboard API",
@@ -181,378 +461,5 @@ export function generateOpenApiDocument() {
       description: "Greenhouse gas emissions dashboard API.",
     },
     servers: [{ url: "/" }],
-    paths: {
-      "/api/openapi": {
-        get: {
-          tags: ["Documentation"],
-          summary: "Get OpenAPI document",
-          responses: {
-            200: response({ type: "object" }, "Raw OpenAPI JSON document."),
-          },
-        },
-      },
-      "/api/docs": {
-        get: {
-          tags: ["Documentation"],
-          summary: "View interactive API docs",
-          responses: {
-            200: {
-              description: "HTML API reference.",
-              content: {
-                "text/html": {
-                  schema: { type: "string" },
-                },
-              },
-            },
-          },
-        },
-      },
-      "/api/countries": {
-        get: {
-          tags: ["Countries"],
-          summary: "List countries",
-          parameters: [
-            queryParameter("includeRegions", { type: "boolean" }, false),
-          ],
-          responses: {
-            200: response({ type: "array", items: { $ref: "#/components/schemas/Country" } }),
-            400: errorResponse("Invalid query parameters."),
-          },
-        },
-        post: {
-          tags: ["Countries"],
-          summary: "Create country",
-          requestBody: jsonBody({ $ref: "#/components/schemas/CreateCountryBody" }),
-          responses: {
-            200: response({ $ref: "#/components/schemas/PersistedCountry" }),
-            400: errorResponse("Invalid body."),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            409: errorResponse("Country code already exists."),
-          },
-        },
-      },
-      "/api/countries/{id}": {
-        patch: {
-          tags: ["Countries"],
-          summary: "Update country",
-          parameters: [pathParameter("id")],
-          requestBody: jsonBody({ $ref: "#/components/schemas/UpdateCountryBody" }),
-          responses: {
-            200: response({ $ref: "#/components/schemas/PersistedCountry" }),
-            400: errorResponse("Invalid id or body."),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Country does not exist."),
-            409: errorResponse("Country code already exists."),
-          },
-        },
-        delete: {
-          tags: ["Countries"],
-          summary: "Delete country",
-          parameters: [pathParameter("id")],
-          responses: {
-            200: response({ $ref: "#/components/schemas/DeleteResponse" }),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Country does not exist."),
-          },
-        },
-      },
-      "/api/emissions/trend": {
-        get: {
-          tags: ["Emissions"],
-          summary: "Get emissions trend",
-          parameters: [
-            queryParameter("country", countryCodeSchema, true),
-            queryParameter("gas", gasSchema),
-            queryParameter("fromYear", yearSchema),
-            queryParameter("toYear", yearSchema),
-          ],
-          responses: {
-            200: response({ $ref: "#/components/schemas/TrendResponse" }),
-            400: errorResponse("Invalid country, gas, or year range."),
-            404: errorResponse("Country does not exist."),
-          },
-        },
-      },
-      "/api/emissions/map": {
-        get: {
-          tags: ["Emissions"],
-          summary: "Get emissions map",
-          parameters: [
-            queryParameter("year", yearSchema, true),
-            queryParameter("gas", gasSchema),
-            queryParameter("includeRegions", { type: "boolean" }),
-          ],
-          responses: {
-            200: response({ $ref: "#/components/schemas/MapResponse" }),
-            400: errorResponse("Invalid year, gas, or includeRegions value."),
-          },
-        },
-      },
-      "/api/emissions/sector": {
-        get: {
-          tags: ["Emissions"],
-          summary: "Get sector breakdown",
-          parameters: [
-            queryParameter("country", countryCodeSchema, true),
-            queryParameter("year", yearSchema, true),
-          ],
-          responses: {
-            200: response({ $ref: "#/components/schemas/SectorBreakdownResponse" }),
-            400: errorResponse("Invalid country or year."),
-            404: errorResponse("Country does not exist."),
-          },
-        },
-      },
-      "/api/emissions/filter": {
-        get: {
-          tags: ["Emissions"],
-          summary: "Get filtered emissions value",
-          parameters: [
-            queryParameter("country", countryCodeSchema, true),
-            queryParameter("gas", gasSchema, true),
-            queryParameter("year", yearSchema, true),
-          ],
-          responses: {
-            200: response({ $ref: "#/components/schemas/FilteredEmissionResponse" }),
-            400: errorResponse("Invalid country, gas, or year."),
-            404: errorResponse("Country does not exist."),
-          },
-        },
-      },
-      "/api/emissions": {
-        post: {
-          tags: ["Emissions"],
-          summary: "Create emissions record",
-          requestBody: jsonBody({ $ref: "#/components/schemas/CreateEmissionBody" }),
-          responses: {
-            200: response({ $ref: "#/components/schemas/AnnualEmission" }),
-            400: errorResponse("Invalid body."),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Country code does not exist."),
-            409: errorResponse("Record already exists for this country and year."),
-          },
-        },
-      },
-      "/api/emissions/{id}": {
-        patch: {
-          tags: ["Emissions"],
-          summary: "Update emissions record",
-          parameters: [pathParameter("id")],
-          requestBody: jsonBody({ $ref: "#/components/schemas/UpdateEmissionBody" }),
-          responses: {
-            200: response({ $ref: "#/components/schemas/AnnualEmission" }),
-            400: errorResponse("Invalid id or body."),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Emissions record does not exist."),
-            409: errorResponse("Updated year would create a duplicate."),
-          },
-        },
-        delete: {
-          tags: ["Emissions"],
-          summary: "Delete emissions record",
-          parameters: [pathParameter("id")],
-          responses: {
-            200: response({ $ref: "#/components/schemas/DeleteResponse" }),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Emissions record does not exist."),
-          },
-        },
-      },
-      "/api/sector-shares": {
-        post: {
-          tags: ["Sector Shares"],
-          summary: "Create sector share record",
-          requestBody: jsonBody({ $ref: "#/components/schemas/CreateSectorShareBody" }),
-          responses: {
-            200: response({ $ref: "#/components/schemas/SectorShare" }),
-            400: errorResponse("Invalid body."),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Country code does not exist."),
-            409: errorResponse("Sector data already exists for this country and year."),
-          },
-        },
-      },
-      "/api/sector-shares/{id}": {
-        patch: {
-          tags: ["Sector Shares"],
-          summary: "Update sector share record",
-          parameters: [pathParameter("id")],
-          requestBody: jsonBody({ $ref: "#/components/schemas/UpdateSectorShareBody" }),
-          responses: {
-            200: response({ $ref: "#/components/schemas/SectorShare" }),
-            400: errorResponse("Invalid id or body."),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Sector share record does not exist."),
-            409: errorResponse("Updated record would create a duplicate."),
-          },
-        },
-        delete: {
-          tags: ["Sector Shares"],
-          summary: "Delete sector share record",
-          parameters: [pathParameter("id")],
-          responses: {
-            200: response({ $ref: "#/components/schemas/DeleteResponse" }),
-            401: errorResponse("Unauthenticated."),
-            403: errorResponse("Forbidden."),
-            404: errorResponse("Sector share record does not exist."),
-          },
-        },
-      },
-    },
-    components: {
-      schemas: {
-        Country: countrySchema,
-        PersistedCountry: persistedCountrySchema,
-        AnnualEmission: annualEmissionSchema,
-        SectorShare: sectorShareSchema,
-        DeleteResponse: deletedSchema,
-        ErrorResponse: {
-          type: "object",
-          required: ["error"],
-          properties: {
-            error: {
-              type: "object",
-              required: ["code", "details"],
-              properties: {
-                code: {
-                  type: "string",
-                  enum: errorCodes,
-                },
-                details: {
-                  type: "object",
-                  additionalProperties: true,
-                },
-              },
-            },
-          },
-        },
-        CreateCountryBody: countrySchema,
-        UpdateCountryBody: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            isRegion: { type: "boolean" },
-          },
-        },
-        CreateEmissionBody: {
-          ...annualEmissionSchema,
-          required: annualEmissionSchema.required.filter((key) => key !== "id"),
-          properties: Object.fromEntries(
-            Object.entries(annualEmissionSchema.properties).filter(([key]) => key !== "id"),
-          ),
-        },
-        UpdateEmissionBody: {
-          type: "object",
-          required: ["year"],
-          properties: {
-            year: yearSchema,
-            total: nullableNumberSchema,
-            co2: nullableNumberSchema,
-            ch4: nullableNumberSchema,
-            n2o: nullableNumberSchema,
-            hfc: nullableNumberSchema,
-            pfc: nullableNumberSchema,
-            sf6: nullableNumberSchema,
-          },
-        },
-        CreateSectorShareBody: {
-          ...sectorShareSchema,
-          required: sectorShareSchema.required.filter((key) => key !== "id"),
-          properties: Object.fromEntries(
-            Object.entries(sectorShareSchema.properties).filter(([key]) => key !== "id"),
-          ),
-        },
-        UpdateSectorShareBody: {
-          type: "object",
-          properties: {
-            transport: nullableNumberSchema,
-            manufacturing: nullableNumberSchema,
-            electricity: nullableNumberSchema,
-            buildings: nullableNumberSchema,
-            other: nullableNumberSchema,
-          },
-        },
-        TrendResponse: {
-          type: "object",
-          required: ["country", "gas", "unit", "points"],
-          properties: {
-            country: countrySummarySchema,
-            gas: gasSchema,
-            unit: { type: "string", const: "kt_co2e" },
-            points: {
-              type: "array",
-              items: {
-                type: "object",
-                required: ["year", "value"],
-                properties: {
-                  year: yearSchema,
-                  value: nullableNumberSchema,
-                },
-              },
-            },
-          },
-        },
-        MapResponse: {
-          type: "object",
-          required: ["year", "gas", "unit", "countries"],
-          properties: {
-            year: yearSchema,
-            gas: gasSchema,
-            unit: { type: "string", const: "kt_co2e" },
-            countries: {
-              type: "array",
-              items: {
-                type: "object",
-                required: ["countryCode", "countryName", "value"],
-                properties: {
-                  countryCode: countryCodeSchema,
-                  countryName: { type: "string" },
-                  value: nullableNumberSchema,
-                },
-              },
-            },
-          },
-        },
-        SectorBreakdownResponse: {
-          type: "object",
-          required: ["country", "year", "unit", "sectors"],
-          properties: {
-            country: countrySummarySchema,
-            year: yearSchema,
-            unit: { type: "string", const: "percent" },
-            sectors: {
-              type: "object",
-              required: ["transport", "manufacturing", "electricity", "buildings", "other"],
-              properties: {
-                transport: nullableNumberSchema,
-                manufacturing: nullableNumberSchema,
-                electricity: nullableNumberSchema,
-                buildings: nullableNumberSchema,
-                other: nullableNumberSchema,
-              },
-            },
-          },
-        },
-        FilteredEmissionResponse: {
-          type: "object",
-          required: ["country", "year", "gas", "unit", "value"],
-          properties: {
-            country: countrySummarySchema,
-            year: yearSchema,
-            gas: gasSchema,
-            unit: { type: "string", const: "kt_co2e" },
-            value: nullableNumberSchema,
-          },
-        },
-      },
-    },
-  };
+  });
 }

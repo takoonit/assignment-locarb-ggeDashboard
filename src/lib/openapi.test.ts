@@ -1,6 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { generateOpenApiDocument } from "./openapi";
 
+type TestSchema = Record<string, unknown> & {
+  enum?: string[];
+  items?: TestSchema;
+  properties?: Record<string, TestSchema>;
+  required?: string[];
+};
+
+type SchemaMap = Record<string, TestSchema>;
+
+function schemas(): SchemaMap {
+  return generateOpenApiDocument().components?.schemas as SchemaMap;
+}
+
+function properties(schema: TestSchema): Record<string, TestSchema> {
+  return schema.properties ?? {};
+}
+
 describe("generateOpenApiDocument", () => {
   it("generates the Lo-Carb OpenAPI document without optional docs dependencies", () => {
     const document = generateOpenApiDocument();
@@ -29,7 +46,7 @@ describe("generateOpenApiDocument", () => {
   it("documents every Epic 2 API contract path", () => {
     const document = generateOpenApiDocument();
 
-    expect(Object.keys(document.paths)).toEqual(
+    expect(Object.keys(document.paths ?? {})).toEqual(
       expect.arrayContaining([
         "/api/countries",
         "/api/countries/{id}",
@@ -45,24 +62,58 @@ describe("generateOpenApiDocument", () => {
         "/api/docs",
       ]),
     );
-    expect(document.paths["/api/countries"].get).toBeDefined();
-    expect(document.paths["/api/countries"].post).toBeDefined();
-    expect(document.paths["/api/emissions/{id}"].patch).toBeDefined();
-    expect(document.paths["/api/sector-shares/{id}"].delete).toBeDefined();
+    expect(document.paths?.["/api/countries"]?.get).toBeDefined();
+    expect(document.paths?.["/api/countries"]?.post).toBeDefined();
+    expect(document.paths?.["/api/emissions/{id}"]?.patch).toBeDefined();
+    expect(document.paths?.["/api/sector-shares/{id}"]?.delete).toBeDefined();
   });
 
   it("keeps null-preserving response schemas explicit", () => {
-    const document = generateOpenApiDocument();
-    const schemas = document.components.schemas;
+    const documentSchemas = schemas();
 
-    expect(schemas.TrendResponse.properties.points.items.properties.value).toEqual({
-      type: ["number", "null"],
-    });
     expect(
-      schemas.SectorBreakdownResponse.properties.sectors.properties.electricity,
+      properties(properties(documentSchemas.TrendResponse).points.items ?? {})
+        .value,
     ).toEqual({ type: ["number", "null"] });
-    expect(schemas.FilteredEmissionResponse.properties.value).toEqual({
+    expect(
+      properties(properties(documentSchemas.SectorBreakdownResponse).sectors)
+        .electricity,
+    ).toEqual({ type: ["number", "null"] });
+    expect(properties(documentSchemas.FilteredEmissionResponse).value).toEqual({
       type: ["number", "null"],
     });
+  });
+
+  it("matches B7 partial update route behavior for emissions bodies", () => {
+    const schema = schemas().UpdateEmissionBody;
+
+    expect(schema.required ?? []).not.toContain("year");
+    expect(properties(schema).co2).toEqual({ type: ["number", "null"] });
+  });
+
+  it("documents gas enum, year bounds, envelopes, and errors from shared schemas", () => {
+    const documentSchemas = schemas();
+
+    expect(documentSchemas.Gas.enum).toEqual([
+      "TOTAL",
+      "CO2",
+      "CH4",
+      "N2O",
+      "HFC",
+      "PFC",
+      "SF6",
+    ]);
+    expect(documentSchemas.Year).toMatchObject({ minimum: 1990, maximum: 2030 });
+    expect(properties(documentSchemas.SuccessResponse).data).toBeDefined();
+    expect(
+      properties(properties(documentSchemas.ErrorResponse).error).code.enum,
+    ).toEqual([
+      "INVALID_PARAMS",
+      "UNAUTHENTICATED",
+      "FORBIDDEN",
+      "NOT_FOUND",
+      "CONFLICT",
+      "INTERNAL_ERROR",
+    ]);
   });
 });
