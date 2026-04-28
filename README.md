@@ -40,6 +40,50 @@ Greenhouse Gas Emissions Dashboard & API.
 - `docs/06-tradeoffs-next-steps.md`
 - `TASK.md`
 
+## Getting Started
+
+This project uses [Doppler](https://www.doppler.com/) for secrets management. Real values are never committed — `.env.example` lists the required variable names only.
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 20+, [pnpm](https://pnpm.io/), and [Doppler CLI](https://docs.doppler.com/docs/install-cli)
+- Access to the Doppler project for this app
+- A [Neon](https://neon.tech/) PostgreSQL database (see `docs/07-env-neon-doppler.md`)
+
+### 1. Clone and install
+
+```bash
+git clone <repo-url>
+cd assignment-locarb-ggeDashboard
+pnpm install
+```
+
+### 2. Connect Doppler
+
+```bash
+doppler login       # one-time authentication
+doppler setup       # link this directory to the Doppler project/config
+```
+
+All five required secrets (`DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `NEXT_PUBLIC_APP_URL`) must be present in Doppler before running the app. See `.env.example` for the full list.
+
+### 3. Run database migrations and seed
+
+```bash
+doppler run -- pnpm db:migrate:deploy
+doppler run -- pnpm db:seed
+```
+
+### 4. Start the dev server
+
+```bash
+doppler run -- pnpm dev
+```
+
+The app will be available at `http://localhost:3000`.
+
+> For full Neon + Doppler setup details see `docs/07-env-neon-doppler.md`.
+
 ## Build Notes
 
 - Keep route handlers thin
