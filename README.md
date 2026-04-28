@@ -5,7 +5,8 @@ Greenhouse Gas Emissions Dashboard & API.
 ## Project Status
 
 - Planning docs exported to `docs/`
-- Build phase not started yet
+- Build phase not started yet; implementation begins when `TASK.md` story B1 starts.
+- BMAD readiness is tracked in `TASK.md`.
 
 ## Stack at a Glance
 
@@ -35,6 +36,8 @@ Greenhouse Gas Emissions Dashboard & API.
 - `docs/02-data-model.md`
 - `docs/03-api-contracts.md`
 - `docs/04-ui-spec.md`
+- `docs/05-ai-workflow.md`
+- `docs/06-tradeoffs-next-steps.md`
 - `TASK.md`
 
 ## Build Notes
