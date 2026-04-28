@@ -3,7 +3,7 @@
 **Project:** Greenhouse Gas Emissions Dashboard & API
 **Owner:** Takoon
 **Source:** Notion `07 - Tasks`
-**Status:** BMAD implementation in progress; next story is B2
+**Status:** BMAD implementation in progress; next story is B8
 
 ---
 
@@ -25,7 +25,8 @@ Use this section first. The detailed task tables below are the source of accepta
 ## Done
 
 - A1-A9: planning artifacts are complete.
-- B1: repo scaffold is complete.
+- B1-B4: Epic 1 (Scaffold, Prisma, Seed, Auth) is complete.
+- B5-B7, B14: Epic 2 (API Read/Write, Error Wrapper, Docs) is complete.
 - P1-P5: pre-BMAD cleanup is complete.
 - BMAD readiness gate is green.
 - Main Notion checklist is synced with the repo.
@@ -34,27 +35,18 @@ Use this section first. The detailed task tables below are the source of accepta
 
 ## Next
 
-- B2 - Prisma schema
-  - Active BMAD story: `docs/bmad/stories/epic-1/story-b2-prisma-schema.md`.
+- B8 - Dashboard shell
+  - Active BMAD story: `docs/bmad/stories/epic-3/story-b8-dashboard-shell.md`.
   - Resume pointer: `docs/bmad/current.md`.
-  - Define Prisma schema for `Country`, `AnnualEmission`, `SectorShare`, and `User`.
-  - Match relationships, uniqueness rules, indexes, role enum, and cascade behavior from `docs/02-data-model.md`.
-  - Verify basic scripts still work.
+  - Implement the main dashboard layout and responsive shell.
 
 ## Not Started
 
-- B3 - CSV seed pipeline
-- B4 - Auth.js + GitHub OAuth
-- B5 - API read endpoints
-- B6 - API error wrapper
-- B7 - API write endpoints
-- B8 - Dashboard shell
 - B9 - Trend line chart
 - B10 - World map
 - B11 - Sector bar chart
 - B12 - Gas filter
 - B13 - Admin CRUD page
-- B14 - OpenAPI + Scalar docs
 - B15 - README
 - B16 - Deploy + smoke test
 
@@ -86,7 +78,7 @@ BMAD implementation may start only when every item below is checked.
 | README aligned | Checked | `README.md` references existing planning docs, includes `TASK.md`, and clarifies that implementation begins at B1. |
 | Notion and repo synced | Checked | Main Notion checklist now matches repo readiness state and points to `07 - Tasks` / `TASK.md`. |
 
-Current gate status: BMAD implementation in progress. Continue from story B2.
+Current gate status: BMAD implementation in progress. Continue from story B8.
 
 ---
 
@@ -129,19 +121,19 @@ Build order after docs are final.
 | # | Story | Status | Depends On | Acceptance Criteria |
 | --- | --- | --- | --- | --- |
 | B1 | Repo scaffold | Done | A1-A7 | Next.js 16 + TypeScript + MUI + Material Design 3-inspired theme are set up. Basic scripts work. |
-| B2 | Prisma schema | Next | A5 | Schema matches `Country`, `AnnualEmission`, `SectorShare`, and `User`. Migration runs cleanly. |
-| B3 | CSV seed pipeline | Todo | B2 | Seed reads provided CSV, skips metadata rows, preserves nulls, and upserts countries, annual emissions, and sector shares. |
-| B4 | Auth.js + GitHub OAuth | Todo | B2 | GitHub sign-in works. User has `email` and `role`. Admin role check works. |
-| B5 | API read endpoints | Todo | B3, A6 | Countries, trend, map, sector, and filter endpoints work with Zod validation. |
-| B6 | API error wrapper | Todo | B5 | Shared error shape and success shape are used by all routes. |
-| B7 | API write endpoints | Todo | B4, B5 | Admin-only create/update/delete exists for countries, annual emissions, and sector shares. |
-| B8 | Dashboard shell | Todo | B1, A7 | Responsive layout with header, scoped controls, and main dashboard area. |
+| B2 | Prisma schema | Done | A5 | Schema matches `Country`, `AnnualEmission`, `SectorShare`, and `User`. Migration runs cleanly. |
+| B3 | CSV seed pipeline | Done | B2 | Seed reads provided CSV, skips metadata rows, preserves nulls, and upserts countries, annual emissions, and sector shares. |
+| B4 | Auth.js + GitHub OAuth | Done | B2 | GitHub sign-in works. User has `email` and `role`. Admin role check works. |
+| B5 | API read endpoints | Done | B3, A6 | Countries, trend, map, sector, and filter endpoints work with Zod validation. |
+| B6 | API error wrapper | Done | B5 | Shared error shape and success shape are used by all routes. |
+| B7 | API write endpoints | Done | B4, B5 | Admin-only create/update/delete exists for countries, annual emissions, and sector shares. |
+| B8 | Dashboard shell | Next | B1, A7 | Responsive layout with header, scoped controls, and main dashboard area. |
 | B9 | Trend line chart | Todo | B5, B8 | Country/gas selection works. Missing years and sparse data render safely. |
 | B10 | World map | Todo | B5, B8 | Year/gas selection works. No-data countries use distinct color. |
 | B11 | Sector bar chart | Todo | B5, B8 | Sector shares render by country/year. Null and zero values are handled safely. |
 | B12 | Gas filter | Todo | B9-B11 | Single-select gas filter controls trend/map and URL state. |
 | B13 | Admin CRUD page | Todo | B7, B8 | `/admin` route is protected by `requireAdmin`; create/edit/delete forms work. |
-| B14 | OpenAPI + Scalar docs | Todo | B5, B7 | Zod schemas generate `GET /api/openapi`; Scalar renders `GET /api/docs`; docs cover endpoints, params, bodies, responses, and errors without manual YAML. |
+| B14 | OpenAPI + Scalar docs | Done | B5, B7 | Zod schemas generate `GET /api/openapi`; Scalar renders `GET /api/docs`; docs cover endpoints, params, bodies, responses, and errors without manual YAML. |
 | B15 | README | Todo | B1-B14 | Setup, env vars, seed, run, API docs, screenshots, tradeoffs, and live URL are documented. |
 | B16 | Deploy + smoke test | Todo | B15 | Vercel live URL works. Dashboard, APIs, seed, and auth are verified. |
 
