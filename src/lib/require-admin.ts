@@ -1,16 +1,16 @@
 import { getServerSession } from "next-auth/next";
-import { NextResponse } from "next/server";
 import { authOptions } from "@/auth";
+import { apiError } from "@/lib/api-utils";
 
-export async function requireAdmin(): Promise<NextResponse | null> {
+export async function requireAdmin(): Promise<Response | null> {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    return apiError("UNAUTHENTICATED", {}, 401);
   }
 
   if ((session.user as { role?: string })?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("FORBIDDEN", {}, 403);
   }
 
   return null;

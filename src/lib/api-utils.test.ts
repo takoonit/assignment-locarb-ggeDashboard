@@ -6,7 +6,7 @@ describe("withApiErrorHandling", () => {
   it("returns handler response on success", async () => {
     const handler = vi.fn().mockResolvedValue(NextResponse.json({ data: "ok" }));
     const wrapped = withApiErrorHandling(handler);
-    
+
     const req = new NextRequest("http://localhost");
     const res = await wrapped(req, {});
     const data = await res.json();
@@ -38,14 +38,14 @@ describe("withApiErrorHandling", () => {
 
     const req = new NextRequest("http://localhost");
     // Silence console.error for this test
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+
     const res = await wrapped(req, {});
     const data = await res.json();
 
     expect(res.status).toBe(500);
     expect(data.error.code).toBe("INTERNAL_ERROR");
-    
+
     consoleSpy.mockRestore();
   });
 });

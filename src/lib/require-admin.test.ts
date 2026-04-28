@@ -17,6 +17,12 @@ describe("requireAdmin", () => {
     const result = await requireAdmin();
 
     expect(result!.status).toBe(401);
+    await expect(result!.json()).resolves.toEqual({
+      error: {
+        code: "UNAUTHENTICATED",
+        details: {},
+      },
+    });
   });
 
   it("returns 403 when authenticated but role is VIEWER", async () => {
@@ -30,6 +36,12 @@ describe("requireAdmin", () => {
     const result = await requireAdmin();
 
     expect(result!.status).toBe(403);
+    await expect(result!.json()).resolves.toEqual({
+      error: {
+        code: "FORBIDDEN",
+        details: {},
+      },
+    });
   });
 
   it("returns null when user is ADMIN", async () => {

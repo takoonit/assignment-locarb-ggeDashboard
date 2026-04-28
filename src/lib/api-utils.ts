@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const API_ERROR_CODES = [
+  "INVALID_PARAMS",
+  "UNAUTHENTICATED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "CONFLICT",
+  "INTERNAL_ERROR",
+] as const;
+
 export type ApiErrorCode =
-  | "INVALID_PARAMS"
-  | "UNAUTHENTICATED"
-  | "FORBIDDEN"
-  | "NOT_FOUND"
-  | "CONFLICT"
-  | "INTERNAL_ERROR";
+  (typeof API_ERROR_CODES)[number];
 
 export const API_ERROR_CODES = [
   "INVALID_PARAMS",
