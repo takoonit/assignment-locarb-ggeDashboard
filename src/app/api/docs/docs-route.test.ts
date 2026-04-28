@@ -9,5 +9,6 @@ describe("GET /api/docs", () => {
     expect(response.headers.get("content-type")).toContain("text/html");
     expect(html).toContain("/api/openapi");
     expect(html).toContain("Scalar");
+    expect(html).toContain('"hiddenClients": true');
   });
 });

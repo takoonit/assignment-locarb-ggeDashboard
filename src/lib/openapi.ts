@@ -11,12 +11,9 @@ import {
   createCountryBodySchema,
   createEmissionBodySchema,
   createSectorShareBodySchema,
-  filterQuerySchema,
   gasSchema,
-  mapQuerySchema,
+  booleanQuerySchema,
   nullableNumberSchema,
-  sectorQuerySchema,
-  trendQuerySchema,
   updateCountryBodySchema,
   updateEmissionBodySchema,
   updateSectorShareBodySchema,
@@ -25,12 +22,19 @@ import {
 
 const registry = new OpenAPIRegistry();
 
-const IdParam = z.string().min(1).openapi({
-  param: {
-    name: "id",
-    in: "path",
-  },
+const CountryIdParam = z.string().min(1).openapi({
+  param: { name: "id", in: "path" },
   example: "country_id",
+});
+
+const EmissionIdParam = z.string().min(1).openapi({
+  param: { name: "id", in: "path" },
+  example: "emission_id",
+});
+
+const SectorShareIdParam = z.string().min(1).openapi({
+  param: { name: "id", in: "path" },
+  example: "sector_share_id",
 });
 
 const CountryCode = registry.register("CountryCode", countryCodeSchema);
@@ -65,7 +69,7 @@ const PersistedCountry = registry.register(
 const AnnualEmission = registry.register(
   "AnnualEmission",
   z.object({
-    id: z.string().openapi({ example: "annual_emission_id" }),
+    id: z.string().openapi({ example: "emission_id" }),
     countryCode: CountryCode,
     year: Year,
     total: NullableNumber,
@@ -99,6 +103,41 @@ const DeleteResponse = registry.register(
     id: z.string(),
   }),
 );
+
+const CountryCodeParam = countryCodeSchema.openapi({ example: "THA" });
+const YearParam = yearSchema.openapi({ example: 2020 });
+const FromYearParam = yearSchema.default(1990).openapi({ example: 1990 });
+const ToYearParam = yearSchema.default(2030).openapi({ example: 2030 });
+const DefaultGasParam = gasSchema.default("TOTAL");
+
+const trendOpenApiQuerySchema = z
+  .object({
+    country: CountryCodeParam,
+    gas: DefaultGasParam,
+    fromYear: FromYearParam,
+    toYear: ToYearParam,
+  })
+  .refine((value) => value.fromYear <= value.toYear, {
+    message: "fromYear must be less than or equal to toYear",
+    path: ["fromYear"],
+  });
+
+const mapOpenApiQuerySchema = z.object({
+  year: YearParam,
+  gas: DefaultGasParam,
+  includeRegions: booleanQuerySchema.default(false),
+});
+
+const sectorOpenApiQuerySchema = z.object({
+  country: CountryCodeParam,
+  year: YearParam,
+});
+
+const filterOpenApiQuerySchema = z.object({
+  country: CountryCodeParam,
+  gas: gasSchema,
+  year: YearParam,
+});
 
 const ErrorResponse = registry.register(
   "ErrorResponse",
@@ -230,8 +269,9 @@ const jsonBody = (schema: z.ZodType) => ({
 registry.registerPath({
   method: "get",
   path: "/api/openapi",
-  tags: ["Documentation"],
+  tags: ["Internal"],
   summary: "Get OpenAPI document",
+  description: "Returns the raw OpenAPI 3.1 JSON document describing this API.",
   responses: {
     200: dataResponse(z.object({}).passthrough()),
   },
@@ -240,8 +280,9 @@ registry.registerPath({
 registry.registerPath({
   method: "get",
   path: "/api/docs",
-  tags: ["Documentation"],
+  tags: ["Internal"],
   summary: "View interactive API docs",
+  description: "Renders the Scalar interactive API reference UI.",
   responses: {
     200: {
       description: "HTML API reference.",
@@ -255,6 +296,8 @@ registry.registerPath({
   path: "/api/countries",
   tags: ["Countries"],
   summary: "List countries",
+  description:
+    "Returns all countries (and optionally regions) stored in the system. Use `includeRegions=true` to include aggregate regional entries.",
   request: { query: countriesQuerySchema },
   responses: {
     200: dataResponse(z.array(Country)),
@@ -265,8 +308,10 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/api/countries",
+  operationId: "createCountry",
   tags: ["Countries"],
   summary: "Create country",
+  description: "Creates a new country entry. The country code must be unique.",
   request: { body: jsonBody(CreateCountryBody) },
   responses: {
     200: dataResponse(PersistedCountry),
@@ -280,9 +325,12 @@ registry.registerPath({
 registry.registerPath({
   method: "patch",
   path: "/api/countries/{id}",
+  operationId: "updateCountry",
   tags: ["Countries"],
   summary: "Update country",
-  request: { params: z.object({ id: IdParam }), body: jsonBody(UpdateCountryBody) },
+  description:
+    "Partially updates an existing country. Only provided fields are changed.",
+  request: { params: z.object({ id: CountryIdParam }), body: jsonBody(UpdateCountryBody) },
   responses: {
     200: dataResponse(PersistedCountry),
     400: errorResponse("Invalid id or body."),
@@ -296,9 +344,11 @@ registry.registerPath({
 registry.registerPath({
   method: "delete",
   path: "/api/countries/{id}",
+  operationId: "deleteCountry",
   tags: ["Countries"],
   summary: "Delete country",
-  request: { params: z.object({ id: IdParam }) },
+  description: "Permanently deletes a country and returns its id on success.",
+  request: { params: z.object({ id: CountryIdParam }) },
   responses: {
     200: dataResponse(DeleteResponse),
     401: errorResponse("Unauthenticated."),
@@ -312,7 +362,9 @@ registry.registerPath({
   path: "/api/emissions/trend",
   tags: ["Emissions"],
   summary: "Get emissions trend",
-  request: { query: trendQuerySchema },
+  description:
+    "Returns a time series of annual emissions for a single country and gas type over the given year range.",
+  request: { query: trendOpenApiQuerySchema },
   responses: {
     200: dataResponse(TrendResponse),
     400: errorResponse("Invalid country, gas, or year range."),
@@ -325,7 +377,9 @@ registry.registerPath({
   path: "/api/emissions/map",
   tags: ["Emissions"],
   summary: "Get emissions map",
-  request: { query: mapQuerySchema },
+  description:
+    "Returns per-country emission values for a single year and gas, suitable for choropleth map rendering.",
+  request: { query: mapOpenApiQuerySchema },
   responses: {
     200: dataResponse(MapResponse),
     400: errorResponse("Invalid year, gas, or includeRegions value."),
@@ -337,7 +391,9 @@ registry.registerPath({
   path: "/api/emissions/sector",
   tags: ["Emissions"],
   summary: "Get sector breakdown",
-  request: { query: sectorQuerySchema },
+  description:
+    "Returns the percentage breakdown of emissions by sector (transport, manufacturing, electricity, buildings, other) for a country and year.",
+  request: { query: sectorOpenApiQuerySchema },
   responses: {
     200: dataResponse(SectorBreakdownResponse),
     400: errorResponse("Invalid country or year."),
@@ -350,7 +406,9 @@ registry.registerPath({
   path: "/api/emissions/filter",
   tags: ["Emissions"],
   summary: "Get filtered emissions value",
-  request: { query: filterQuerySchema },
+  description:
+    "Returns a single emission value for a specific country, year, and gas type.",
+  request: { query: filterOpenApiQuerySchema },
   responses: {
     200: dataResponse(FilteredEmissionResponse),
     400: errorResponse("Invalid country, gas, or year."),
@@ -361,8 +419,11 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/api/emissions",
+  operationId: "createEmission",
   tags: ["Emissions"],
   summary: "Create emissions record",
+  description:
+    "Creates a new annual emissions record for a country. The combination of country code and year must be unique.",
   request: { body: jsonBody(CreateEmissionBody) },
   responses: {
     200: dataResponse(AnnualEmission),
@@ -377,9 +438,11 @@ registry.registerPath({
 registry.registerPath({
   method: "patch",
   path: "/api/emissions/{id}",
+  operationId: "updateEmission",
   tags: ["Emissions"],
   summary: "Update emissions record",
-  request: { params: z.object({ id: IdParam }), body: jsonBody(UpdateEmissionBody) },
+  description: "Partially updates an existing annual emissions record.",
+  request: { params: z.object({ id: EmissionIdParam }), body: jsonBody(UpdateEmissionBody) },
   responses: {
     200: dataResponse(AnnualEmission),
     400: errorResponse("Invalid id or body."),
@@ -393,9 +456,11 @@ registry.registerPath({
 registry.registerPath({
   method: "delete",
   path: "/api/emissions/{id}",
+  operationId: "deleteEmission",
   tags: ["Emissions"],
   summary: "Delete emissions record",
-  request: { params: z.object({ id: IdParam }) },
+  description: "Permanently deletes an annual emissions record.",
+  request: { params: z.object({ id: EmissionIdParam }) },
   responses: {
     200: dataResponse(DeleteResponse),
     401: errorResponse("Unauthenticated."),
@@ -407,8 +472,11 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/api/sector-shares",
+  operationId: "createSectorShare",
   tags: ["Sector Shares"],
   summary: "Create sector share record",
+  description:
+    "Creates a sector breakdown record for a country and year. The combination of country code and year must be unique.",
   request: { body: jsonBody(CreateSectorShareBody) },
   responses: {
     200: dataResponse(SectorShare),
@@ -423,9 +491,11 @@ registry.registerPath({
 registry.registerPath({
   method: "patch",
   path: "/api/sector-shares/{id}",
+  operationId: "updateSectorShare",
   tags: ["Sector Shares"],
   summary: "Update sector share record",
-  request: { params: z.object({ id: IdParam }), body: jsonBody(UpdateSectorShareBody) },
+  description: "Partially updates an existing sector share record.",
+  request: { params: z.object({ id: SectorShareIdParam }), body: jsonBody(UpdateSectorShareBody) },
   responses: {
     200: dataResponse(SectorShare),
     400: errorResponse("Invalid id or body."),
@@ -439,9 +509,11 @@ registry.registerPath({
 registry.registerPath({
   method: "delete",
   path: "/api/sector-shares/{id}",
+  operationId: "deleteSectorShare",
   tags: ["Sector Shares"],
   summary: "Delete sector share record",
-  request: { params: z.object({ id: IdParam }) },
+  description: "Permanently deletes a sector share record.",
+  request: { params: z.object({ id: SectorShareIdParam }) },
   responses: {
     200: dataResponse(DeleteResponse),
     401: errorResponse("Unauthenticated."),
@@ -460,6 +532,22 @@ export function generateOpenApiDocument() {
       version: "0.1.0",
       description: "Greenhouse gas emissions dashboard API.",
     },
-    servers: [{ url: "/" }],
+    servers: [{ url: "/", description: "Production" }],
+    tags: [
+      { name: "Countries", description: "Country reference data management." },
+      {
+        name: "Emissions",
+        description:
+          "Annual greenhouse gas emission records and aggregated views (trend, map, sector, filter).",
+      },
+      {
+        name: "Sector Shares",
+        description: "Per-sector emission share records by country and year.",
+      },
+      {
+        name: "Internal",
+        description: "Meta-endpoints: OpenAPI document and interactive docs.",
+      },
+    ],
   });
 }

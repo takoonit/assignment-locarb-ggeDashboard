@@ -9,6 +9,10 @@ type TestSchema = Record<string, unknown> & {
 };
 
 type SchemaMap = Record<string, TestSchema>;
+type TestParameter = {
+  name: string;
+  schema?: TestSchema;
+};
 
 function schemas(): SchemaMap {
   return generateOpenApiDocument().components?.schemas as SchemaMap;
@@ -16,6 +20,20 @@ function schemas(): SchemaMap {
 
 function properties(schema: TestSchema): Record<string, TestSchema> {
   return schema.properties ?? {};
+}
+
+function parameters(path: string, method: "get"): TestParameter[] {
+  const operation = generateOpenApiDocument().paths?.[path]?.[method] as
+    | { parameters?: TestParameter[] }
+    | undefined;
+
+  return operation?.parameters ?? [];
+}
+
+function parameter(path: string, name: string): TestParameter {
+  const found = parameters(path, "get").find((item) => item.name === name);
+  expect(found).toBeDefined();
+  return found!;
 }
 
 describe("generateOpenApiDocument", () => {
@@ -115,5 +133,47 @@ describe("generateOpenApiDocument", () => {
       "CONFLICT",
       "INTERNAL_ERROR",
     ]);
+  });
+
+  it("documents route query defaults used by the API", () => {
+    expect(parameter("/api/countries", "includeRegions").schema).toMatchObject({
+      default: false,
+    });
+    expect(parameter("/api/emissions/map", "gas").schema).toMatchObject({
+      default: "TOTAL",
+    });
+    expect(parameter("/api/emissions/map", "includeRegions").schema).toMatchObject({
+      default: false,
+    });
+    expect(parameter("/api/emissions/trend", "gas").schema).toMatchObject({
+      default: "TOTAL",
+    });
+    expect(parameter("/api/emissions/trend", "fromYear").schema).toMatchObject({
+      default: 1990,
+    });
+    expect(parameter("/api/emissions/trend", "toYear").schema).toMatchObject({
+      default: 2030,
+    });
+  });
+
+  it("documents example values for required query params", () => {
+    expect(parameter("/api/emissions/map", "year").schema).toMatchObject({
+      example: 2020,
+    });
+    expect(parameter("/api/emissions/trend", "country").schema).toMatchObject({
+      example: "THA",
+    });
+    expect(parameter("/api/emissions/sector", "country").schema).toMatchObject({
+      example: "THA",
+    });
+    expect(parameter("/api/emissions/sector", "year").schema).toMatchObject({
+      example: 2020,
+    });
+    expect(parameter("/api/emissions/filter", "country").schema).toMatchObject({
+      example: "THA",
+    });
+    expect(parameter("/api/emissions/filter", "year").schema).toMatchObject({
+      example: 2020,
+    });
   });
 });
