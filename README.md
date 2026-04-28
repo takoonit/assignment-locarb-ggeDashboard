@@ -1,33 +1,48 @@
 # assignment-locarb-ggeDashboard
-recruitment assignment 
-Full-stack take-home assessment for the Lo-Carb mid-level full-stack engineer role. Build a greenhouse gas emissions dashboard and REST API in 2 days, hitting all must-haves and all listed bonuses.
 
-**Live URL:** *TBD*
+Greenhouse Gas Emissions Dashboard & API for the Lo-Carb take-home.
 
-**Repo:** *TBD*
+## Project Status
 
-**Submission deadline:** 2026-04-28
+- Planning docs exported to `docs/`
+- Build phase not started yet
 
 ## Stack at a Glance
 
 - Next.js 16 (App Router) + TypeScript
 - PostgreSQL on Neon + Prisma
-- shadcn/ui + Tailwind
+- MUI with a Material Design 3-inspired theme
 - TanStack Query + Recharts + react-simple-maps
-- Auth.js (GitHub provider)
-- Zod for validation, next-swagger-doc for API docs
+- Auth.js with GitHub OAuth
+- Zod for validation
 - Vercel deployment
 
-## Planning Documents
+## Core Decisions
 
-Sub-pages below contain the planning artifacts. Build phase will follow with BMAD on Claude Code.
+- Single Next.js app for dashboard and API
+- App-oriented data model: `Country`, `AnnualEmission`, `SectorShare`, `User`
+- Seed script transforms the provided CSV into app tables
+- Missing CSV values stay `null`, never `0`
+- `/admin` is a top-level route
+- Gas filter is single-select
 
-- 00 PRD
-- 01 Architecture (pending)
-- 02 Data Model (pending)
-- 03 API Contracts (pending)
-- 04 UI Sketches (pending)
-- 05 AI Workflow Log (pending)
-- 06 Tradeoffs & Next Steps (pending)
+## Docs
 
-##
+- `docs/00-prd.md`
+- `docs/01-architecture.md`
+- `docs/01b-conventions.md`
+- `docs/01c-adrs.md`
+- `docs/02-data-model.md`
+- `docs/03-api-contracts.md`
+- `docs/04-ui-spec.md`
+- `TASK.md`
+
+## Build Notes
+
+- Keep route handlers thin
+- Put business logic in `lib/services`
+- Validate inputs with Zod
+- Use explicit Prisma `select`
+- Public GET routes do not require auth
+- Write routes require `requireAdmin()`
+- API responses use `{ data }` or `{ error: { code, details } }`
