@@ -10,6 +10,7 @@ const serviceMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/services/emissions", () => serviceMock);
+vi.mock("@/lib/require-admin", () => ({ requireAdmin: vi.fn().mockResolvedValue(null) }));
 
 const request = (path: string) => new NextRequest(`http://localhost${path}`);
 

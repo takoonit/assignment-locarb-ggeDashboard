@@ -176,4 +176,21 @@ describe("generateOpenApiDocument", () => {
       example: 2020,
     });
   });
+
+  it("every write endpoint has an explicit operationId", () => {
+    const document = generateOpenApiDocument();
+    const writeMethods = ["post", "patch", "delete"] as const;
+
+    const missing: string[] = [];
+    for (const [path, item] of Object.entries(document.paths ?? {})) {
+      for (const method of writeMethods) {
+        const op = (item as Record<string, { operationId?: string }>)[method];
+        if (op && !op.operationId) {
+          missing.push(`${method.toUpperCase()} ${path}`);
+        }
+      }
+    }
+
+    expect(missing).toEqual([]);
+  });
 });

@@ -67,7 +67,7 @@ describe("emissions read service", () => {
       toYear: 2002,
     });
 
-    expect(result.points).toEqual([
+    expect(result!.points).toEqual([
       { year: 2000, value: 184200 },
       { year: 2001, value: null },
       { year: 2002, value: null },
@@ -112,7 +112,7 @@ describe("emissions read service", () => {
     const { getSectorBreakdown } = await import("./emissions");
     const result = await getSectorBreakdown({ country: "THA", year: 2020 });
 
-    expect(result.sectors).toEqual({
+    expect(result!.sectors).toEqual({
       transport: null,
       manufacturing: null,
       electricity: null,

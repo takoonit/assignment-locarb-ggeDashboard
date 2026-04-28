@@ -6,13 +6,11 @@ import "@/lib/zod-openapi";
 import { z } from "zod";
 import { API_ERROR_CODES } from "@/lib/api-utils";
 import {
-  countriesQuerySchema,
   countryCodeSchema,
   createCountryBodySchema,
   createEmissionBodySchema,
   createSectorShareBodySchema,
   gasSchema,
-  booleanQuerySchema,
   nullableNumberSchema,
   updateCountryBodySchema,
   updateEmissionBodySchema,
@@ -125,7 +123,7 @@ const trendOpenApiQuerySchema = z
 const mapOpenApiQuerySchema = z.object({
   year: YearParam,
   gas: DefaultGasParam,
-  includeRegions: booleanQuerySchema.default(false),
+  includeRegions: z.boolean().default(false),
 });
 
 const sectorOpenApiQuerySchema = z.object({
@@ -298,7 +296,7 @@ registry.registerPath({
   summary: "List countries",
   description:
     "Returns all countries (and optionally regions) stored in the system. Use `includeRegions=true` to include aggregate regional entries.",
-  request: { query: countriesQuerySchema },
+  request: { query: z.object({ includeRegions: z.boolean().default(false) }) },
   responses: {
     200: dataResponse(z.array(Country)),
     400: errorResponse("Invalid query parameters."),

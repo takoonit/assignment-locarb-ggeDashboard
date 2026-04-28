@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { GET } from "./route";
-import { getEmissionsFilter } from "@/lib/services/emissions";
+import { getFilteredEmission } from "@/lib/services/emissions";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/services/emissions", () => ({
-  getEmissionsFilter: vi.fn(),
+  getFilteredEmission: vi.fn(),
 }));
 
 describe("GET /api/emissions/filter", () => {
@@ -13,10 +13,10 @@ describe("GET /api/emissions/filter", () => {
       country: { code: "THA", name: "Thailand" },
       year: 2020,
       gas: "CO2",
-      unit: "kt_co2e",
+      unit: "kt_co2e" as const,
       value: 100,
     };
-    vi.mocked(getEmissionsFilter).mockResolvedValue(mockFilter);
+    vi.mocked(getFilteredEmission).mockResolvedValue(mockFilter);
 
     const req = new NextRequest("http://localhost/api/emissions/filter?country=THA&gas=CO2&year=2020");
     const res = await GET(req);
@@ -24,6 +24,6 @@ describe("GET /api/emissions/filter", () => {
 
     expect(res.status).toBe(200);
     expect(data.data).toEqual(mockFilter);
-    expect(getEmissionsFilter).toHaveBeenCalledWith("THA", "CO2", 2020);
+    expect(getFilteredEmission).toHaveBeenCalledWith({ country: "THA", gas: "CO2", year: 2020 });
   });
 });

@@ -12,7 +12,7 @@ describe("GET /api/emissions/map", () => {
     const mockMap = {
       year: 2020,
       gas: "TOTAL",
-      unit: "kt_co2e",
+      unit: "kt_co2e" as const,
       countries: [{ countryCode: "THA", countryName: "Thailand", value: 100 }],
     };
     vi.mocked(getEmissionsMap).mockResolvedValue(mockMap);
@@ -23,7 +23,7 @@ describe("GET /api/emissions/map", () => {
 
     expect(res.status).toBe(200);
     expect(data.data).toEqual(mockMap);
-    expect(getEmissionsMap).toHaveBeenCalledWith(2020, "TOTAL", false);
+    expect(getEmissionsMap).toHaveBeenCalledWith({ year: 2020, gas: "TOTAL", includeRegions: false });
   });
 
   it("returns 400 for missing year", async () => {

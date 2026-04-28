@@ -16,12 +16,12 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     return apiError("INVALID_PARAMS", query.error.flatten().fieldErrors);
   }
 
-  const trend = await getEmissionsTrend(
-    query.data.country,
-    query.data.gas,
-    query.data.fromYear,
-    query.data.toYear
-  );
+  const trend = await getEmissionsTrend({
+    country: query.data.country,
+    gas: query.data.gas,
+    fromYear: query.data.fromYear,
+    toYear: query.data.toYear,
+  });
 
   if (!trend) {
     return apiError("NOT_FOUND", { message: "Country not found" }, 404);

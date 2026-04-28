@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { apiResponse, apiError, withApiErrorHandling } from "@/lib/api-utils";
-import { CountriesQuerySchema } from "@/lib/api-schemas";
-import { getCountries } from "@/lib/services/emissions";
+import { CountriesQuerySchema, createCountryBodySchema, parseJsonBody } from "@/lib/api-schemas";
+import { requireAdmin } from "@/lib/require-admin";
+import { listCountries, createCountry } from "@/lib/services/emissions";
 
 export const GET = withApiErrorHandling(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
@@ -13,7 +14,7 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     return apiError("INVALID_PARAMS", query.error.flatten().fieldErrors);
   }
 
-  const countries = await getCountries(query.data.includeRegions);
+  const countries = await listCountries({ includeRegions: query.data.includeRegions });
   return apiResponse(countries);
 });
 

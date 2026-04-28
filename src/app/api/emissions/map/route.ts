@@ -15,11 +15,11 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     return apiError("INVALID_PARAMS", query.error.flatten().fieldErrors);
   }
 
-  const mapData = await getEmissionsMap(
-    query.data.year,
-    query.data.gas,
-    query.data.includeRegions
-  );
+  const mapData = await getEmissionsMap({
+    year: query.data.year,
+    gas: query.data.gas,
+    includeRegions: query.data.includeRegions,
+  });
 
   return apiResponse(mapData);
 });

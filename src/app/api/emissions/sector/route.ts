@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiResponse, apiError, withApiErrorHandling } from "@/lib/api-utils";
 import { SectorQuerySchema } from "@/lib/api-schemas";
-import { getEmissionsSector } from "@/lib/services/emissions";
+import { getSectorBreakdown } from "@/lib/services/emissions";
 
 export const GET = withApiErrorHandling(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
@@ -14,10 +14,10 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     return apiError("INVALID_PARAMS", query.error.flatten().fieldErrors);
   }
 
-  const sectorData = await getEmissionsSector(
-    query.data.country,
-    query.data.year
-  );
+  const sectorData = await getSectorBreakdown({
+    country: query.data.country,
+    year: query.data.year,
+  });
 
   if (!sectorData) {
     return apiError("NOT_FOUND", { message: "Country not found" }, 404);

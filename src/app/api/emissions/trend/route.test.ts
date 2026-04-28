@@ -12,7 +12,7 @@ describe("GET /api/emissions/trend", () => {
     const mockTrend = {
       country: { code: "THA", name: "Thailand" },
       gas: "TOTAL",
-      unit: "kt_co2e",
+      unit: "kt_co2e" as const,
       points: [{ year: 2020, value: 100 }],
     };
     vi.mocked(getEmissionsTrend).mockResolvedValue(mockTrend);
@@ -23,7 +23,12 @@ describe("GET /api/emissions/trend", () => {
 
     expect(res.status).toBe(200);
     expect(data.data).toEqual(mockTrend);
-    expect(getEmissionsTrend).toHaveBeenCalledWith("THA", "TOTAL", undefined, undefined);
+    expect(getEmissionsTrend).toHaveBeenCalledWith({
+      country: "THA",
+      gas: "TOTAL",
+      fromYear: undefined,
+      toYear: undefined,
+    });
   });
 
   it("validates year range", async () => {
