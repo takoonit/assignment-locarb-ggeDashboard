@@ -10,8 +10,8 @@ declare global {
   var _prisma: ReturnType<typeof createPrismaClient> | undefined;
 }
 
-export const prisma = globalThis._prisma ?? createPrismaClient();
+export const db = globalThis._prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
-  globalThis._prisma = prisma;
+  globalThis._prisma = db;
 }

@@ -1,12 +1,12 @@
-import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/api-utils";
+import { db } from "@/lib/db";
+import { ApiError } from "@/lib/api/error";
 
 type PrismaErrorLike = { code: string };
 
 // ─── Countries ────────────────────────────────────────────────────────────────
 
 export async function listCountries({ includeRegions = false }: { includeRegions?: boolean } = {}) {
-  return prisma.country.findMany({
+  return db.country.findMany({
     where: includeRegions ? {} : { isRegion: false },
     select: { code: true, name: true, isRegion: true },
     orderBy: { name: "asc" },
@@ -15,7 +15,7 @@ export async function listCountries({ includeRegions = false }: { includeRegions
 
 export async function createCountry(body: { code: string; name: string; isRegion?: boolean }) {
   try {
-    return await prisma.country.create({
+    return await db.country.create({
       data: { code: body.code.toUpperCase(), name: body.name, isRegion: body.isRegion ?? false },
       select: { id: true, code: true, name: true, isRegion: true },
     });
@@ -29,7 +29,7 @@ export async function createCountry(body: { code: string; name: string; isRegion
 
 export async function updateCountry(id: string, body: { code?: string; name?: string; isRegion?: boolean }) {
   try {
-    return await prisma.country.update({
+    return await db.country.update({
       where: { id },
       data: {
         ...(body.code !== undefined ? { code: body.code.toUpperCase() } : {}),
@@ -48,7 +48,7 @@ export async function updateCountry(id: string, body: { code?: string; name?: st
 
 export async function deleteCountry(id: string) {
   try {
-    await prisma.country.delete({ where: { id } });
+    await db.country.delete({ where: { id } });
     return { deleted: true as const, id };
   } catch (error) {
     throw mapWriteError(error, {
@@ -71,7 +71,7 @@ export async function getEmissionsTrend({
   fromYear?: number;
   toYear?: number;
 }) {
-  const country = await prisma.country.findUnique({
+  const country = await db.country.findUnique({
     where: { code: countryCode },
     select: { id: true, code: true, name: true },
   });
@@ -80,7 +80,7 @@ export async function getEmissionsTrend({
 
   const gasField = gas.toLowerCase() as string;
 
-  const emissions = (await prisma.annualEmission.findMany({
+  const emissions = (await db.annualEmission.findMany({
     where: {
       countryId: country.id,
       year: { gte: fromYear, lte: toYear },
@@ -126,7 +126,7 @@ export async function getEmissionsMap({
 }) {
   const gasField = gas.toLowerCase() as string;
 
-  const countries = (await prisma.country.findMany({
+  const countries = (await db.country.findMany({
     where: includeRegions ? {} : { isRegion: false },
     select: {
       code: true,
@@ -160,14 +160,14 @@ export async function getSectorBreakdown({
   country: string;
   year: number;
 }) {
-  const country = await prisma.country.findUnique({
+  const country = await db.country.findUnique({
     where: { code: countryCode },
     select: { id: true, code: true, name: true },
   });
 
   if (!country) return null;
 
-  const sectorData = await prisma.sectorShare.findUnique({
+  const sectorData = await db.sectorShare.findUnique({
     where: { countryId_year: { countryId: country.id, year } },
   });
 
@@ -196,7 +196,7 @@ export async function getFilteredEmission({
   gas: string;
   year: number;
 }) {
-  const country = await prisma.country.findUnique({
+  const country = await db.country.findUnique({
     where: { code: countryCode },
     select: { id: true, code: true, name: true },
   });
@@ -205,7 +205,7 @@ export async function getFilteredEmission({
 
   const gasField = gas.toLowerCase() as string;
 
-  const emission = (await prisma.annualEmission.findUnique({
+  const emission = (await db.annualEmission.findUnique({
     where: { countryId_year: { countryId: country.id, year } },
     select: { [gasField]: true },
   })) as { [key: string]: number | null } | null;
@@ -271,7 +271,7 @@ export async function createAnnualEmission(body: {
   pfc?: number | null;
   sf6?: number | null;
 }) {
-  const country = await prisma.country.findUnique({
+  const country = await db.country.findUnique({
     where: { code: body.countryCode },
     select: { id: true },
   });
@@ -279,7 +279,7 @@ export async function createAnnualEmission(body: {
   if (!country) throw new ApiError("NOT_FOUND", { countryCode: body.countryCode }, 404);
 
   try {
-    const row = await prisma.annualEmission.create({
+    const row = await db.annualEmission.create({
       data: {
         countryId: country.id,
         year: body.year,
@@ -316,7 +316,7 @@ export async function updateAnnualEmission(
   },
 ) {
   try {
-    const row = await prisma.annualEmission.update({
+    const row = await db.annualEmission.update({
       where: { id },
       data: body,
       select: annualEmissionSelect,
@@ -332,7 +332,7 @@ export async function updateAnnualEmission(
 
 export async function deleteAnnualEmission(id: string) {
   try {
-    await prisma.annualEmission.delete({ where: { id } });
+    await db.annualEmission.delete({ where: { id } });
     return { deleted: true as const, id };
   } catch (error) {
     throw mapWriteError(error, {
@@ -386,7 +386,7 @@ export async function createSectorShare(body: {
   buildings?: number | null;
   other?: number | null;
 }) {
-  const country = await prisma.country.findUnique({
+  const country = await db.country.findUnique({
     where: { code: body.countryCode },
     select: { id: true },
   });
@@ -394,7 +394,7 @@ export async function createSectorShare(body: {
   if (!country) throw new ApiError("NOT_FOUND", { countryCode: body.countryCode }, 404);
 
   try {
-    const row = await prisma.sectorShare.create({
+    const row = await db.sectorShare.create({
       data: {
         countryId: country.id,
         year: body.year,
@@ -427,7 +427,7 @@ export async function updateSectorShare(
   },
 ) {
   try {
-    const row = await prisma.sectorShare.update({
+    const row = await db.sectorShare.update({
       where: { id },
       data: body,
       select: sectorShareSelect,
@@ -443,7 +443,7 @@ export async function updateSectorShare(
 
 export async function deleteSectorShare(id: string) {
   try {
-    await prisma.sectorShare.delete({ where: { id } });
+    await db.sectorShare.delete({ where: { id } });
     return { deleted: true as const, id };
   } catch (error) {
     throw mapWriteError(error, {

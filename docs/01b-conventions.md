@@ -34,13 +34,13 @@ src/
 ├── hooks/
 ├── lib/
 │   ├── api/
-│   │   ├── client.ts
 │   │   ├── error.ts
 │   │   └── response.ts
 │   ├── auth/
 │   │   ├── config.ts
 │   │   └── require-admin.ts
 │   ├── schemas/
+│   │   └── index.ts
 │   ├── services/
 │   ├── db.ts
 │   ├── env.ts
@@ -140,30 +140,31 @@ Example read route:
 ```ts
 // src/app/api/emissions/trend/route.ts
 import { NextRequest } from "next/server";
-import { z } from "zod";
-import { apiError, apiSuccess } from "@/lib/api/response";
+import { apiSuccess, apiError, withApiErrorHandling } from "@/lib/api/response";
+import { TrendQuerySchema } from "@/lib/schemas";
 import { getEmissionsTrend } from "@/lib/services/emissions";
 
-const QuerySchema = z.object({
-  country: z.string().length(3),
-  gas: z.enum(["TOTAL", "CO2", "CH4", "N2O", "HFC", "PFC", "SF6"]).default("TOTAL"),
-  fromYear: z.coerce.number().int().min(1990).max(2030).optional(),
-  toYear: z.coerce.number().int().min(1990).max(2030).optional(),
-});
-
-export async function GET(req: NextRequest) {
-  const params = QuerySchema.safeParse(
-    Object.fromEntries(req.nextUrl.searchParams),
-  );
+export const GET = withApiErrorHandling(async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url);
+  const params = TrendQuerySchema.safeParse({
+    country: searchParams.get("country"),
+    gas: searchParams.get("gas") || undefined,
+    fromYear: searchParams.get("fromYear"),
+    toYear: searchParams.get("toYear"),
+  });
 
   if (!params.success) {
-    return apiError(400, "INVALID_PARAMS", params.error.flatten());
+    return apiError("INVALID_PARAMS", params.error.flatten().fieldErrors);
   }
 
   const data = await getEmissionsTrend(params.data);
 
+  if (!data) {
+    return apiError("NOT_FOUND", { message: "Country not found" }, 404);
+  }
+
   return apiSuccess(data);
-}
+});
 ```
 
 Rules:
@@ -173,9 +174,10 @@ Rules:
 - Return `400 INVALID_PARAMS` for validation errors.
 - Do not put large Prisma queries directly in route handlers.
 - Every Prisma query uses `select`.
-- Success responses use `apiSuccess(data)`.
-- Error responses use `apiError(status, code, details)`.
-- Mutating routes call `requireAdmin()` first.
+- Wrap all route handlers with `withApiErrorHandling`.
+- Success responses use `apiSuccess(data)` from `@/lib/api/response`.
+- Error responses use `apiError(code, details, status)` from `@/lib/api/response`.
+- Mutating routes call `await requireAdmin()` first; it throws on failure (caught by `withApiErrorHandling`).
 
 ---
 
@@ -212,6 +214,17 @@ Never return raw Prisma records directly.
 
 # 6. Auth Convention
 ```ts
+// src/lib/auth/config.ts
+import type { AuthOptions } from "next-auth";
+import { getServerSession } from "next-auth/next";
+
+export const authOptions: AuthOptions = { /* ... */ };
+
+// Thin wrapper so callers never import getServerSession directly.
+export const auth = () => getServerSession(authOptions);
+```
+
+```ts
 // src/lib/auth/require-admin.ts
 import { auth } from "@/lib/auth/config";
 import { ApiError } from "@/lib/api/error";
@@ -220,11 +233,11 @@ export async function requireAdmin() {
   const session = await auth();
 
   if (!session?.user) {
-    throw new ApiError(401, "UNAUTHENTICATED");
+    throw new ApiError("UNAUTHENTICATED", {}, 401);
   }
 
-  if (session.user.role !== "ADMIN") {
-    throw new ApiError(403, "FORBIDDEN");
+  if ((session.user as { role?: string })?.role !== "ADMIN") {
+    throw new ApiError("FORBIDDEN", {}, 403);
   }
 
   return session;

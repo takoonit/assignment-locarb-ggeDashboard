@@ -3,9 +3,9 @@ import {
   parseIdParam,
   parseJsonBody,
   updateCountryBodySchema,
-} from "@/lib/api-schemas";
-import { apiResponse, withApiErrorHandling } from "@/lib/api-utils";
-import { requireAdmin } from "@/lib/require-admin";
+} from "@/lib/schemas";
+import { apiSuccess, withApiErrorHandling } from "@/lib/api/response";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { deleteCountry, updateCountry } from "@/lib/services/emissions";
 
 type IdRouteContext = {
@@ -14,25 +14,23 @@ type IdRouteContext = {
 
 export const PATCH = withApiErrorHandling(
   async (request: NextRequest, context?: unknown) => {
-    const adminError = await requireAdmin();
-    if (adminError) return adminError;
+    await requireAdmin();
 
     const { id } = await (context as IdRouteContext).params;
     const body = await parseJsonBody(updateCountryBodySchema, request);
     const country = await updateCountry(parseIdParam(id), body);
 
-    return apiResponse(country);
+    return apiSuccess(country);
   },
 );
 
 export const DELETE = withApiErrorHandling(
   async (_request: NextRequest, context?: unknown) => {
-    const adminError = await requireAdmin();
-    if (adminError) return adminError;
+    await requireAdmin();
 
     const { id } = await (context as IdRouteContext).params;
     const deleted = await deleteCountry(parseIdParam(id));
 
-    return apiResponse(deleted);
+    return apiSuccess(deleted);
   },
 );

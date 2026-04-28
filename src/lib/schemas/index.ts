@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ApiError } from "@/lib/api-utils";
+import { ApiError } from "@/lib/api/error";
 
 export const CountryCodeSchema = z
   .string()

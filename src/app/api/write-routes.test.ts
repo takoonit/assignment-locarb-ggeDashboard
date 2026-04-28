@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiError } from "@/lib/api-utils";
+import { ApiError } from "@/lib/api/error";
 
 const authMock = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
@@ -18,7 +18,7 @@ const serviceMock = vi.hoisted(() => ({
   deleteSectorShare: vi.fn(),
 }));
 
-vi.mock("@/lib/require-admin", () => authMock);
+vi.mock("@/lib/auth/require-admin", () => authMock);
 vi.mock("@/lib/services/emissions", () => serviceMock);
 
 const jsonRequest = (path: string, body: unknown) =>
@@ -49,12 +49,12 @@ async function expectError(
 describe("B7 write API routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    authMock.requireAdmin.mockResolvedValue(null);
+    authMock.requireAdmin.mockResolvedValue(undefined);
   });
 
   it("rejects unauthenticated writes before calling services", async () => {
-    authMock.requireAdmin.mockResolvedValueOnce(
-      apiError("UNAUTHENTICATED", {}, 401),
+    authMock.requireAdmin.mockRejectedValueOnce(
+      new ApiError("UNAUTHENTICATED", {}, 401),
     );
 
     const { POST } = await import("./countries/route");
@@ -71,7 +71,7 @@ describe("B7 write API routes", () => {
   });
 
   it("rejects forbidden writes before calling services", async () => {
-    authMock.requireAdmin.mockResolvedValueOnce(apiError("FORBIDDEN", {}, 403));
+    authMock.requireAdmin.mockRejectedValueOnce(new ApiError("FORBIDDEN", {}, 403));
 
     const { POST } = await import("./emissions/route");
     const response = await POST(
