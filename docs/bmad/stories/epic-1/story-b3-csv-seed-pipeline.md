@@ -2,7 +2,7 @@
 
 **Epic:** 1 - Foundation  
 **Status:** Next
-**Dependencies:** B2  
+**Dependencies:** B2.5
 
 ## Story
 

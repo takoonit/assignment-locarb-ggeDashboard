@@ -9,7 +9,9 @@ Status: ready
 
 ## Resume Notes
 
-- B2 is complete and validated.
+- B2.5 is complete and validated.
 - `TASK.md` is intentionally untracked and should not be committed.
+- Doppler is scoped to `gge-dashboard` / `dev_personal`.
+- Neon `DATABASE_URL` is stored in Doppler, not in repo files.
 - Implementation must start with the B3 story file only.
 - Invoke the `test-driven-development` skill before writing B3 implementation code.
