@@ -1,9 +1,8 @@
 # Story B5 - API Read Endpoints
 
-**Epic:** 2 - API  
-**Status:** Todo  
-**Dependencies:** B3, A6  
-
+**Epic:** 2 - API
+**Status:** Done
+**Dependencies:** B3, A6
 ## Story
 
 As a public API user, I want read endpoints for countries, trends, map data, sector data, and selected filters so that I can query the seeded emissions dataset.

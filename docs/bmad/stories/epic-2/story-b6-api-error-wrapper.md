@@ -1,9 +1,8 @@
 # Story B6 - API Error Wrapper
 
-**Epic:** 2 - API  
-**Status:** Todo  
-**Dependencies:** B5  
-
+**Epic:** 2 - API
+**Status:** Done
+**Dependencies:** B5
 ## Story
 
 As an API consumer, I want consistent success and error responses so that frontend and external clients can handle API behavior predictably.
