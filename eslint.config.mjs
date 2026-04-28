@@ -35,6 +35,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "docs/GGE-Dashboard prototype/**",
+    "docs/prototype/**",
   ]),
 ]);
 
