@@ -13,12 +13,12 @@ export function apiError(
   return NextResponse.json({ error: { code, details } }, { status });
 }
 
-export function withApiErrorHandling(
-  handler: (req: NextRequest, context?: unknown) => Promise<NextResponse>
-) {
-  return async (req: NextRequest, context?: unknown) => {
+export function withApiErrorHandling<T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>>(
+  handler: T
+): T {
+  return (async (req: NextRequest, ...args: any[]) => {
     try {
-      return await handler(req, context);
+      return await handler(req, ...args);
     } catch (error) {
       if (error instanceof ApiError) {
         return apiError(error.code, error.details, error.status);
@@ -27,5 +27,5 @@ export function withApiErrorHandling(
       console.error(`Unhandled API Error:`, error);
       return apiError("INTERNAL_ERROR", {}, 500);
     }
-  };
+  }) as T;
 }

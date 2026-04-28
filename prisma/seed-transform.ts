@@ -151,11 +151,30 @@ export function transformSeedCsv(csv: string): SeedTransformResult {
 
   const header = rows[headerIndex];
   const column = buildColumnLookup(header);
+
+  const metadataColumns = new Set([
+    "Country Name",
+    "Country Code",
+    "Series Name",
+    "Series Code",
+  ]);
+
   const yearColumns = header
-    .map((name, index) => ({ index, year: parseYearColumn(name) }))
-    .filter((entry): entry is { index: number; year: number } =>
-      Number.isInteger(entry.year),
-    );
+    .map((name, index) => ({ index, name, year: parseYearColumn(name) }))
+    .filter((entry): entry is { index: number; year: number } => {
+      const trimmedName = entry.name.trim();
+      if (metadataColumns.has(trimmedName)) {
+        return false;
+      }
+
+      if (Number.isInteger(entry.year)) {
+        return true;
+      }
+
+      throw new Error(
+        `Offending header name "${entry.name}" could not be parsed as a year.`,
+      );
+    });
 
   const countriesByCode = new Map<string, SeedCountry>();
   const annualEmissionsByCountryYear = new Map<string, AnnualEmissionSeed>();
@@ -284,9 +303,20 @@ export function parseCsv(input: string): string[][] {
 }
 
 function buildColumnLookup(header: string[]) {
-  return Object.fromEntries(
+  const lookup = Object.fromEntries(
     header.map((name, index) => [name.trim(), index]),
   ) as Record<string, number>;
+
+  const required = ["Country Name", "Country Code", "Series Name"];
+  for (const col of required) {
+    if (lookup[col] === undefined) {
+      throw new Error(
+        `Required column "${col}" was not found in the CSV header.`,
+      );
+    }
+  }
+
+  return lookup;
 }
 
 function cell(row: string[], index: number | undefined) {

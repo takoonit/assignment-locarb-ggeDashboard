@@ -5,10 +5,15 @@ import { Pool } from "pg";
 import type { AnnualEmissionSeed, SectorShareSeed } from "./seed-transform";
 import { transformSeedCsv } from "./seed-transform";
 
-const defaultCsvPath = path.join(process.cwd(), "docs", "data_for_test.csv");
-
 async function main() {
-  const csvPath = process.env.SEED_CSV_PATH ?? defaultCsvPath;
+  const csvPath = process.env.SEED_CSV_PATH;
+
+  if (!csvPath) {
+    throw new Error(
+      "SEED_CSV_PATH environment variable is required to run the seed script.",
+    );
+  }
+
   const csv = readFileSync(csvPath, "utf8");
   const seedData = transformSeedCsv(csv);
   const connectionString = process.env.DATABASE_URL;

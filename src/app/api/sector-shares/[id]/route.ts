@@ -16,10 +16,10 @@ type IdRouteContext = {
 };
 
 export const PATCH = withApiErrorHandling(
-  async (request: NextRequest, context?: unknown) => {
+  async (request: NextRequest, context: IdRouteContext) => {
     await requireAdmin();
 
-    const { id } = await (context as IdRouteContext).params;
+    const { id } = await context.params;
     const body = await parseJsonBody(updateSectorShareBodySchema, request);
     const sectorShare = await updateSectorShare(parseIdParam(id), body);
 
@@ -28,10 +28,10 @@ export const PATCH = withApiErrorHandling(
 );
 
 export const DELETE = withApiErrorHandling(
-  async (_request: NextRequest, context?: unknown) => {
+  async (_request: NextRequest, context: IdRouteContext) => {
     await requireAdmin();
 
-    const { id } = await (context as IdRouteContext).params;
+    const { id } = await context.params;
     const deleted = await deleteSectorShare(parseIdParam(id));
 
     return apiSuccess(deleted);
