@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GGE Dashboard
 
-## Getting Started
+Greenhouse Gas Emissions Dashboard & API.
 
-First, run the development server:
+## Project Status
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Planning docs exported to `docs/`
+- Build phase not started yet
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack at a Glance
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 16 (App Router) + TypeScript
+- PostgreSQL on Neon + Prisma
+- MUI with a Material Design 3-inspired theme
+- TanStack Query + Recharts + react-simple-maps
+- Auth.js with GitHub OAuth
+- Zod for validation
+- Vercel deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Core Decisions
 
-## Learn More
+- Single Next.js app for dashboard and API
+- App-oriented data model: `Country`, `AnnualEmission`, `SectorShare`, `User`
+- Seed script transforms the provided CSV into app tables
+- Missing CSV values stay `null`, never `0`
+- `/admin` is a top-level route
+- Gas filter is single-select
 
-To learn more about Next.js, take a look at the following resources:
+## Docs
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `docs/00-prd.md`
+- `docs/01-architecture.md`
+- `docs/01b-conventions.md`
+- `docs/01c-adrs.md`
+- `docs/02-data-model.md`
+- `docs/03-api-contracts.md`
+- `docs/04-ui-spec.md`
+- `TASK.md`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Build Notes
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Keep route handlers thin
+- Put business logic in `lib/services`
+- Validate inputs with Zod
+- Use explicit Prisma `select`
+- Public GET routes do not require auth
+- Write routes require `requireAdmin()`
+- API responses use `{ data }` or `{ error: { code, details } }`
