@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export type ApiErrorCode =
   | "INVALID_PARAMS"
@@ -8,10 +8,19 @@ export type ApiErrorCode =
   | "CONFLICT"
   | "INTERNAL_ERROR";
 
+export const API_ERROR_CODES = [
+  "INVALID_PARAMS",
+  "UNAUTHENTICATED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "CONFLICT",
+  "INTERNAL_ERROR",
+] as const;
+
 export class ApiError extends Error {
   constructor(
     public code: ApiErrorCode,
-    public details: Record<string, any> = {},
+    public details: Record<string, unknown> = {},
     public status: number = 400
   ) {
     super(code);
@@ -25,7 +34,7 @@ export function apiResponse<T>(data: T, status: number = 200) {
 
 export function apiError(
   code: ApiErrorCode,
-  details: Record<string, any> = {},
+  details: Record<string, unknown> = {},
   status: number = 400
 ) {
   return NextResponse.json(
@@ -40,9 +49,9 @@ export function apiError(
 }
 
 export function withApiErrorHandling(
-  handler: (req: NextRequest, context: any) => Promise<NextResponse>
+  handler: (req: NextRequest, context: unknown) => Promise<NextResponse>
 ) {
-  return async (req: NextRequest, context: any) => {
+  return async (req: NextRequest, context: unknown) => {
     try {
       return await handler(req, context);
     } catch (error) {
