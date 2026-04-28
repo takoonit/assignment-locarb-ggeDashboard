@@ -49,9 +49,9 @@ export function apiError(
 }
 
 export function withApiErrorHandling(
-  handler: (req: NextRequest, context: unknown) => Promise<NextResponse>
+  handler: (req: NextRequest, context?: unknown) => Promise<NextResponse>
 ) {
-  return async (req: NextRequest, context: unknown) => {
+  return async (req: NextRequest, context?: unknown) => {
     try {
       return await handler(req, context);
     } catch (error) {

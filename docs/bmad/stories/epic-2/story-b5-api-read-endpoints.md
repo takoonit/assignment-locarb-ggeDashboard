@@ -35,3 +35,10 @@ As a public API user, I want read endpoints for countries, trends, map data, sec
 - Fill trend year ranges with explicit `null` values when a year has no row or the selected gas value is missing.
 - Return all non-region countries for map data by default, including countries with `null` values for the requested year/gas.
 - Return an all-null sector object when the country exists but has no sector row for the requested year.
+
+## Validation
+
+- `bun run test`
+- `bun run lint`
+- `$env:DATABASE_URL='postgresql://user:pass@localhost:5432/gge_dashboard'; bun run typecheck`
+- `$env:DATABASE_URL='postgresql://user:pass@localhost:5432/gge_dashboard'; bun run build`
