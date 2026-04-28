@@ -10,7 +10,7 @@ describe("environment setup contract", () => {
 
     for (const variable of [
       "DATABASE_URL",
-      "AUTH_SECRET",
+      "NEXTAUTH_SECRET",
       "AUTH_GITHUB_ID",
       "AUTH_GITHUB_SECRET",
       "NEXT_PUBLIC_APP_URL",
