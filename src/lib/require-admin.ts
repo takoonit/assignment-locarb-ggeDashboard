@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth/next";
+import type { NextResponse } from "next/server";
 import { authOptions } from "@/auth";
 import { apiError } from "@/lib/api-utils";
 
-export async function requireAdmin(): Promise<Response | null> {
+export async function requireAdmin(): Promise<NextResponse | null> {
   const session = await getServerSession(authOptions);
 
   if (!session) {

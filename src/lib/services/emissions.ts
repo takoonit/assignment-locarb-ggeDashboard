@@ -161,3 +161,99 @@ export async function getEmissionsFilter(countryCode: string, gas: string, year:
     value: emission?.[gasField as keyof typeof emission] as number | null ?? null,
   };
 }
+
+const annualEmissionSelect = {
+  id: true,
+  year: true,
+  total: true,
+  co2: true,
+  ch4: true,
+  n2o: true,
+  hfc: true,
+  pfc: true,
+  sf6: true,
+  country: { select: { code: true } },
+};
+
+const sectorShareSelect = {
+  id: true,
+  year: true,
+  transport: true,
+  manufacturing: true,
+  electricity: true,
+  buildings: true,
+  other: true,
+  country: { select: { code: true } },
+};
+
+function formatAnnualEmission(row: {
+  id: string;
+  year: number;
+  total: number | null;
+  co2: number | null;
+  ch4: number | null;
+  n2o: number | null;
+  hfc: number | null;
+  pfc: number | null;
+  sf6: number | null;
+  country: { code: string };
+}) {
+  return {
+    id: row.id,
+    countryCode: row.country.code,
+    year: row.year,
+    total: row.total,
+    co2: row.co2,
+    ch4: row.ch4,
+    n2o: row.n2o,
+    hfc: row.hfc,
+    pfc: row.pfc,
+    sf6: row.sf6,
+  };
+}
+
+function formatSectorShare(row: {
+  id: string;
+  year: number;
+  transport: number | null;
+  manufacturing: number | null;
+  electricity: number | null;
+  buildings: number | null;
+  other: number | null;
+  country: { code: string };
+}) {
+  return {
+    id: row.id,
+    countryCode: row.country.code,
+    year: row.year,
+    transport: row.transport,
+    manufacturing: row.manufacturing,
+    electricity: row.electricity,
+    buildings: row.buildings,
+    other: row.other,
+  };
+}
+
+function mapWriteError(
+  error: unknown,
+  {
+    conflictMessage,
+    notFoundMessage,
+  }: { conflictMessage: string; notFoundMessage: string },
+) {
+  if (isPrismaError(error, "P2002")) {
+    return new ApiError("CONFLICT", { message: conflictMessage }, 409);
+  }
+
+  if (isPrismaError(error, "P2025")) {
+    return new ApiError("NOT_FOUND", { message: notFoundMessage }, 404);
+  }
+
+  return error;
+}
+
+function isPrismaError(error: unknown, code: string): error is PrismaErrorLike {
+  return typeof error === "object" && error !== null && "code" in error
+    ? (error as PrismaErrorLike).code === code
+    : false;
+}

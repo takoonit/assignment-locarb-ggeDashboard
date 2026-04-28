@@ -16,3 +16,13 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
   const countries = await getCountries(query.data.includeRegions);
   return apiResponse(countries);
 });
+
+export const POST = withApiErrorHandling(async (request: NextRequest) => {
+  const adminError = await requireAdmin();
+  if (adminError) return adminError;
+
+  const body = await parseJsonBody(createCountryBodySchema, request);
+  const country = await createCountry(body);
+
+  return apiResponse(country);
+});

@@ -7,10 +7,16 @@ const prismaMock = vi.hoisted(() => ({
     findUnique: vi.fn(),
   },
   annualEmission: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
     findMany: vi.fn(),
     findUnique: vi.fn(),
   },
   sectorShare: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
     findUnique: vi.fn(),
   },
 }));
@@ -123,5 +129,46 @@ describe("emissions read service", () => {
     await expect(
       getFilteredEmission({ country: "ZZZ", gas: "CO2", year: 2020 }),
     ).rejects.toMatchObject(new ApiError("NOT_FOUND", { country: "ZZZ" }, 404));
+  });
+
+  it("creates annual emissions through a country lookup and maps duplicate country-year records to CONFLICT", async () => {
+    prismaMock.country.findUnique.mockResolvedValueOnce({
+      id: "country-1",
+      code: "THA",
+      name: "Thailand",
+    });
+    prismaMock.annualEmission.create.mockRejectedValueOnce({ code: "P2002" });
+
+    const { createAnnualEmission } = await import("./emissions");
+
+    await expect(
+      createAnnualEmission({
+        countryCode: "THA",
+        year: 2020,
+        total: 403000,
+        co2: null,
+        ch4: null,
+        n2o: null,
+        hfc: null,
+        pfc: null,
+        sf6: null,
+      }),
+    ).rejects.toMatchObject(
+      new ApiError(
+        "CONFLICT",
+        { message: "Annual emissions already exist for this country and year." },
+        409,
+      ),
+    );
+  });
+
+  it("maps missing write targets to NOT_FOUND", async () => {
+    prismaMock.sectorShare.delete.mockRejectedValueOnce({ code: "P2025" });
+
+    const { deleteSectorShare } = await import("./emissions");
+
+    await expect(deleteSectorShare("missing")).rejects.toMatchObject(
+      new ApiError("NOT_FOUND", { message: "Sector share record not found." }, 404),
+    );
   });
 });

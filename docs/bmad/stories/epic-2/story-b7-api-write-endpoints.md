@@ -1,7 +1,7 @@
 # Story B7 - API Write Endpoints
 
 **Epic:** 2 - API  
-**Status:** Todo  
+**Status:** Done
 **Dependencies:** B4, B5, B6  
 
 ## Story
@@ -17,6 +17,7 @@ As an admin, I want create, update, and delete endpoints so that emissions data 
 - Duplicate country-year records return conflict.
 - Write route behavior matches `docs/03-api-contracts.md`.
 - Mutating route tests cover unauthenticated, forbidden, invalid body, not found, conflict, and success paths where applicable.
+- Error messages should be human-readable and concise.
 
 ## Architecture Context
 
