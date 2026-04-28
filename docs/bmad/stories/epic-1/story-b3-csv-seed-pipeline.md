@@ -1,7 +1,7 @@
 # Story B3 - CSV Seed Pipeline
 
 **Epic:** 1 - Foundation  
-**Status:** Next
+**Status:** Done
 **Dependencies:** B2.5
 
 ## Story

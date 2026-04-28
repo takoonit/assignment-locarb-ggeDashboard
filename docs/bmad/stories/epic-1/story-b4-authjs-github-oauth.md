@@ -1,8 +1,8 @@
 # Story B4 - Auth.js + GitHub OAuth
 
 **Epic:** 1 - Foundation  
-**Status:** Todo  
-**Dependencies:** B2  
+**Status:** Next
+**Dependencies:** B2.5
 
 ## Story
 
