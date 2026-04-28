@@ -1,7 +1,7 @@
 # Story B1 - Repo Scaffold
 
 **Epic:** 1 - Foundation  
-**Status:** Next  
+**Status:** Done
 **Dependencies:** A1-A7  
 
 ## Story
