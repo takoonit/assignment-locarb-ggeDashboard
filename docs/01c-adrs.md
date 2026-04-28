@@ -116,17 +116,17 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Status:** Accepted
 **Date:** 2026-04-28
 **Context:** The project requires API documentation at `/api/docs`. The requirements allow Swagger or similar tools, but the app should avoid outdated documentation UX while still using a standard machine-readable API contract.
-**Decision:** Use OpenAPI as the contract format. Serve the raw OpenAPI document at `GET /api/openapi`. Render interactive API documentation at `/api/docs` using Scalar API Reference. Describe the result as Swagger-compatible OpenAPI documentation.
+**Decision:** Use OpenAPI as the contract format. Serve the raw OpenAPI document at `GET /api/openapi`. Render interactive API documentation at `/api/docs` using Scalar API Reference as the Swagger UI replacement.
 **Consequence:** The API documentation has a modern UI while remaining compatible with the OpenAPI/Swagger ecosystem. The OpenAPI document becomes the machine-readable source for documentation. The team must keep the contract, Zod schemas, and implementation aligned to avoid documentation drift.
 
 ---
 
 # ADR-012: Evaluate OpenAPI schema source strategy
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-04-28
 **Context:** The app will use Zod for runtime validation and OpenAPI for API documentation. If schemas are maintained in multiple places, the contract can drift from the implementation.
-**Decision:** Pending. Options to compare: hand-written OpenAPI, generated OpenAPI from Zod, or route-comment-based documentation.
-**Consequence:** This decision will affect documentation maintenance, schema drift risk, and implementation complexity.
+**Decision:** Generate OpenAPI from Zod schemas using `@asteasolutions/zod-to-openapi`. Render the generated spec with Scalar using `@scalar/nextjs-api-reference`. Do not maintain hand-written OpenAPI YAML or route-comment documentation as a second source of truth.
+**Consequence:** Zod remains the schema source for validation and documentation. Route handlers can stay thin, API docs avoid duplication, and reviewers get a modern Swagger-style documentation experience at `/api/docs`.
 
 ---
 

@@ -25,7 +25,7 @@ Implement public read APIs, shared response/error handling, admin write APIs, an
 - B5 - API read endpoints
 - B6 - API error wrapper
 - B7 - API write endpoints
-- B14 - Swagger/OpenAPI docs
+- B14 - OpenAPI + Scalar docs
 
 ### Epic 3 - Dashboard
 
