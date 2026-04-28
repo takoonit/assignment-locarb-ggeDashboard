@@ -1,7 +1,7 @@
 # Story B2 - Prisma Schema
 
 **Epic:** 1 - Foundation  
-**Status:** Next
+**Status:** Done
 **Dependencies:** A5, B1  
 
 ## Story

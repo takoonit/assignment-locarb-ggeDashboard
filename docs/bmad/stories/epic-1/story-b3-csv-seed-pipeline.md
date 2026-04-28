@@ -1,7 +1,7 @@
 # Story B3 - CSV Seed Pipeline
 
 **Epic:** 1 - Foundation  
-**Status:** Todo  
+**Status:** Next
 **Dependencies:** B2  
 
 ## Story
