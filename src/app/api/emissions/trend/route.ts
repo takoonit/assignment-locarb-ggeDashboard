@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { apiResponse, apiError, withApiErrorHandling } from "@/lib/api-utils";
-import { TrendQuerySchema } from "@/lib/api-schemas";
+import { apiSuccess, apiError, withApiErrorHandling } from "@/lib/api/response";
+import { TrendQuerySchema } from "@/lib/schemas";
 import { getEmissionsTrend } from "@/lib/services/emissions";
 
 export const GET = withApiErrorHandling(async (req: NextRequest) => {
@@ -27,5 +27,5 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     return apiError("NOT_FOUND", { message: "Country not found" }, 404);
   }
 
-  return apiResponse(trend);
+  return apiSuccess(trend);
 });

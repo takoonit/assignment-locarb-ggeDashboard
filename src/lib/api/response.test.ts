@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { withApiErrorHandling, ApiError } from "./api-utils";
+import { withApiErrorHandling } from "./response";
+import { ApiError } from "./error";
 import { NextRequest, NextResponse } from "next/server";
 
 describe("withApiErrorHandling", () => {
@@ -37,7 +38,6 @@ describe("withApiErrorHandling", () => {
     const wrapped = withApiErrorHandling(handler);
 
     const req = new NextRequest("http://localhost");
-    // Silence console.error for this test
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
 
     const res = await wrapped(req, {});

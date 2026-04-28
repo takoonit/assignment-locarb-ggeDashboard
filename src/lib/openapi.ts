@@ -4,7 +4,7 @@ import {
 } from "@asteasolutions/zod-to-openapi";
 import "@/lib/zod-openapi";
 import { z } from "zod";
-import { API_ERROR_CODES } from "@/lib/api-utils";
+import { API_ERROR_CODES } from "@/lib/api/error";
 import {
   countryCodeSchema,
   createCountryBodySchema,
@@ -16,7 +16,7 @@ import {
   updateEmissionBodySchema,
   updateSectorShareBodySchema,
   yearSchema,
-} from "@/lib/api-schemas";
+} from "@/lib/schemas";
 
 const registry = new OpenAPIRegistry();
 

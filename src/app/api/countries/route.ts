@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { apiResponse, apiError, withApiErrorHandling } from "@/lib/api-utils";
-import { CountriesQuerySchema, createCountryBodySchema, parseJsonBody } from "@/lib/api-schemas";
-import { requireAdmin } from "@/lib/require-admin";
+import { apiSuccess, apiError, withApiErrorHandling } from "@/lib/api/response";
+import { CountriesQuerySchema, createCountryBodySchema, parseJsonBody } from "@/lib/schemas";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { listCountries, createCountry } from "@/lib/services/emissions";
 
 export const GET = withApiErrorHandling(async (req: NextRequest) => {
@@ -15,15 +15,14 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
   }
 
   const countries = await listCountries({ includeRegions: query.data.includeRegions });
-  return apiResponse(countries);
+  return apiSuccess(countries);
 });
 
 export const POST = withApiErrorHandling(async (request: NextRequest) => {
-  const adminError = await requireAdmin();
-  if (adminError) return adminError;
+  await requireAdmin();
 
   const body = await parseJsonBody(createCountryBodySchema, request);
   const country = await createCountry(body);
 
-  return apiResponse(country);
+  return apiSuccess(country);
 });

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "@/lib/api-utils";
+import { ApiError } from "@/lib/api/error";
 
 const prismaMock = vi.hoisted(() => ({
   country: {
@@ -21,8 +21,8 @@ const prismaMock = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: prismaMock,
+vi.mock("@/lib/db", () => ({
+  db: prismaMock,
 }));
 
 describe("emissions read service", () => {

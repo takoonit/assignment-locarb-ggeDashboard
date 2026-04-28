@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { apiResponse, apiError, withApiErrorHandling } from "@/lib/api-utils";
-import { MapQuerySchema } from "@/lib/api-schemas";
+import { apiSuccess, apiError, withApiErrorHandling } from "@/lib/api/response";
+import { MapQuerySchema } from "@/lib/schemas";
 import { getEmissionsMap } from "@/lib/services/emissions";
 
 export const GET = withApiErrorHandling(async (req: NextRequest) => {
@@ -21,5 +21,5 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     includeRegions: query.data.includeRegions,
   });
 
-  return apiResponse(mapData);
+  return apiSuccess(mapData);
 });

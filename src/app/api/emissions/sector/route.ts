@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { apiResponse, apiError, withApiErrorHandling } from "@/lib/api-utils";
-import { SectorQuerySchema } from "@/lib/api-schemas";
+import { apiSuccess, apiError, withApiErrorHandling } from "@/lib/api/response";
+import { SectorQuerySchema } from "@/lib/schemas";
 import { getSectorBreakdown } from "@/lib/services/emissions";
 
 export const GET = withApiErrorHandling(async (req: NextRequest) => {
@@ -23,5 +23,5 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     return apiError("NOT_FOUND", { message: "Country not found" }, 404);
   }
 
-  return apiResponse(sectorData);
+  return apiSuccess(sectorData);
 });

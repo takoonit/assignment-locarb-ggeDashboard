@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/prisma", () => {
+vi.mock("@/lib/db", () => {
   return {
-    prisma: {
+    db: {
       user: {
         upsert: vi.fn().mockResolvedValue({}),
         findUnique: vi.fn().mockResolvedValue({ role: "VIEWER" }),
@@ -13,13 +13,13 @@ vi.mock("@/lib/prisma", () => {
 
 describe("auth config", () => {
   it("exports authOptions with GitHub provider", async () => {
-    const { authOptions } = await import("./auth");
+    const { authOptions } = await import("@/lib/auth/config");
     expect(authOptions.providers).toHaveLength(1);
     expect(authOptions.providers[0].id).toBe("github");
   });
 
   it("signIn callback upserts user with VIEWER role by default", async () => {
-    const { authOptions } = await import("./auth");
+    const { authOptions } = await import("@/lib/auth/config");
     const signIn = authOptions.callbacks?.signIn as (args: {
       user: { email: string };
     }) => Promise<boolean>;
@@ -28,7 +28,7 @@ describe("auth config", () => {
   });
 
   it("session callback exposes email and role on session.user", async () => {
-    const { authOptions } = await import("./auth");
+    const { authOptions } = await import("@/lib/auth/config");
     const session = authOptions.callbacks?.session as (args: {
       session: { user: { email: string } };
       token: { email: string; role: string };
@@ -44,7 +44,7 @@ describe("auth config", () => {
   });
 
   it("jwt callback copies role from user into token on first sign-in", async () => {
-    const { authOptions } = await import("./auth");
+    const { authOptions } = await import("@/lib/auth/config");
     const jwt = authOptions.callbacks?.jwt as (args: {
       token: Record<string, unknown>;
       user?: { role?: string };

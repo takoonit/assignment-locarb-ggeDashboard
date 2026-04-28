@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { apiResponse, apiError, withApiErrorHandling } from "@/lib/api-utils";
-import { FilterQuerySchema } from "@/lib/api-schemas";
+import { apiSuccess, apiError, withApiErrorHandling } from "@/lib/api/response";
+import { FilterQuerySchema } from "@/lib/schemas";
 import { getFilteredEmission } from "@/lib/services/emissions";
 
 export const GET = withApiErrorHandling(async (req: NextRequest) => {
@@ -21,5 +21,5 @@ export const GET = withApiErrorHandling(async (req: NextRequest) => {
     year: query.data.year,
   });
 
-  return apiResponse(filterData);
+  return apiSuccess(filterData);
 });

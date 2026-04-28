@@ -1,6 +1,7 @@
 import type { AuthOptions } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import GitHubProvider from "next-auth/providers/github";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -12,7 +13,7 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
-      await prisma.user.upsert({
+      await db.user.upsert({
         where: { email: user.email },
         update: {},
         create: { email: user.email },
@@ -21,7 +22,7 @@ export const authOptions: AuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        const dbUser = await prisma.user.findUnique({
+        const dbUser = await db.user.findUnique({
           where: { email: token.email! },
           select: { role: true },
         });
@@ -38,3 +39,5 @@ export const authOptions: AuthOptions = {
   },
   session: { strategy: "jwt" },
 };
+
+export const auth = () => getServerSession(authOptions);
