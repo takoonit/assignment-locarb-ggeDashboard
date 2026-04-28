@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@prisma/client", () => {
-  const upsert = vi.fn().mockResolvedValue({});
-  const findUnique = vi.fn().mockResolvedValue({ role: "VIEWER" });
-  function PrismaClient() {
-    return { user: { upsert, findUnique } };
-  }
-  return { PrismaClient };
+vi.mock("@/lib/prisma", () => {
+  return {
+    prisma: {
+      user: {
+        upsert: vi.fn().mockResolvedValue({}),
+        findUnique: vi.fn().mockResolvedValue({ role: "VIEWER" }),
+      },
+    },
+  };
 });
 
 describe("auth config", () => {

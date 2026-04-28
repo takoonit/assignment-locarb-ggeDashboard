@@ -53,8 +53,8 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Status:** Accepted
 **Date:** 2026-04-27
 **Context:** Admin routes need authentication and role checks. The app does not need custom user registration.
-**Decision:** Use Auth.js v5 with GitHub OAuth and JWT sessions. Store only `User.email` and `User.role` for admin access.
-**Consequence:** Auth setup stays small. Admin checks use the stored role. Sign-in is limited to GitHub accounts.
+**Decision:** Use next-auth v4 with GitHub OAuth and JWT sessions. Store only `User.email` and `User.role` for admin access. v5 was evaluated and rejected because it is still in beta (`5.0.0-beta.31`) and introduces breaking API changes that are not yet stable.
+**Consequence:** Auth setup stays small. Admin checks use the stored role. Sign-in is limited to GitHub accounts. Upgrading to v5 later will require rewriting `authOptions`, the route handler, and `getServerSession` call sites.
 
 ---
 
@@ -154,6 +154,24 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** Admin users need create, update, and delete flows for countries, annual emissions, and sector shares. The interface should stay simple enough for a take-home while remaining clear to reviewers.
 **Decision:** Pending. Options to compare: one combined admin page, tabbed sections, or separate admin subpages.
 **Consequence:** This decision will affect admin usability, routing complexity, and test coverage.
+
+---
+
+# ADR-018: Manual smoke test for GitHub OAuth end-to-end flow
+**Status:** Accepted
+**Date:** 2026-04-28
+**Context:** The GitHub OAuth redirect flow requires a live GitHub OAuth app, real client credentials, and a browser session. This cannot be replicated in a unit or integration test without mocking GitHub's OAuth server, which would test the mock rather than the real flow. Automated E2E tests (e.g. Playwright) against a live OAuth provider require test GitHub accounts, secret management in CI, and significant setup that exceeds the scope of this take-home.
+**Decision:** The GitHub sign-in flow is verified by a manual smoke test during the B4 story: start the dev server with Doppler secrets, navigate to `/api/auth/signin`, click "Sign in with GitHub", confirm redirect to GitHub, confirm callback returns an authenticated session, confirm a `User` row is created in the database with `role = VIEWER`. Unit tests cover the Auth.js config shape, JWT/session callbacks, and `requireAdmin()` logic in isolation using mocks.
+**Consequence:** The OAuth redirect itself is not regression-tested automatically. A broken `AUTH_GITHUB_ID` or `AUTH_GITHUB_SECRET` in a new environment would only be caught by re-running the manual smoke test.
+
+---
+
+# ADR-017: Use PrismaPg adapter singleton for database access
+**Status:** Accepted
+**Date:** 2026-04-28
+**Context:** Prisma v7 requires a driver adapter when connecting to PostgreSQL via `pg`. Instantiating `PrismaClient` at module load without `DATABASE_URL` crashes the Next.js dev server. Multiple modules importing `PrismaClient` directly would each create their own connection pool.
+**Decision:** Create a shared singleton at `src/lib/prisma.ts` using `PrismaPg` (from `@prisma/adapter-pg`) configured from `DATABASE_URL`. Export the singleton as `prisma`. Guard against multiple instances in development with `globalThis._prisma`.
+**Consequence:** The database connection pool is shared across all server modules. Module load no longer crashes when `DATABASE_URL` is absent at import time — the adapter reads the env var only when the singleton is first used. All modules that need database access must import from `@/lib/prisma`.
 
 ---
 
