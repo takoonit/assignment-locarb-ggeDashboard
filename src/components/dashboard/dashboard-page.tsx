@@ -348,7 +348,7 @@ function Header() {
               },
             }}
           >
-            Log out
+            Sign out
           </Button>
         ) : (
           <Button
@@ -368,7 +368,7 @@ function Header() {
               },
             }}
           >
-            Log in
+            Sign in
           </Button>
         )}
       </Stack>
