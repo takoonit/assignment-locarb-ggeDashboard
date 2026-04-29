@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  VIEWER
+  ADMIN
+}
+
+model Country {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  isRegion        Boolean          @default(false)
+
+  annualEmissions AnnualEmission[]
+  sectorShares    SectorShare[]
+
+  @@index([name])
+  @@index([isRegion])
+}
+
+model AnnualEmission {
+  id        String  @id @default(cuid())
+
+  countryId String
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  year      Int
+
+  total     Float?
+  co2       Float?
+  ch4       Float?
+  n2o       Float?
+  hfc       Float?
+  pfc       Float?
+  sf6       Float?
+
+  @@unique([countryId, year])
+  @@index([year])
+  @@index([countryId, year])
+}
+
+model SectorShare {
+  id            String  @id @default(cuid())
+
+  countryId     String
+  country       Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  year          Int
+
+  transport     Float?
+  manufacturing Float?
+  electricity   Float?
+  buildings     Float?
+  other         Float?
+
+  @@unique([countryId, year])
+  @@index([year])
+  @@index([countryId, year])
+}
+
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+  role  Role   @default(VIEWER)
+}
