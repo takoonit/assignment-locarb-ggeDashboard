@@ -19,7 +19,6 @@
     "db:seed:doppler": "doppler run -- bun run db:seed"
   },
   "dependencies": {
-    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.0.0",
@@ -41,7 +40,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
@@ -54,7 +52,6 @@
     "eslint-config-next": "16.2.4",
     "jsdom": "^29.1.0",
     "prisma": "^7.8.0",
-    "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.5"
   },
