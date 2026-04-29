@@ -1,14 +1,8 @@
 "use client";
 
-import AutoGraphIcon from "@mui/icons-material/AutoGraph";
-import LogoutIcon from "@mui/icons-material/Logout";
-import LoginIcon from "@mui/icons-material/Login";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import { Box, Stack, Typography, Button, IconButton, Tooltip } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSession } from "next-auth/react";
-import Link from "next/link";
 import { ChartCard, ChartEmpty, ChartError, ChartSkeleton } from "@/components/dashboard/chart-card";
 import { CountrySelect, GasControl, YearSelect } from "@/components/dashboard/controls";
 import { SectorChart } from "@/components/dashboard/sector-chart";
@@ -37,8 +31,12 @@ export function DashboardPage() {
   const searchParams = useSearchParams();
 
   const initialCountry = sanitizeCountry(searchParams.get("country"));
-  const initialYear = sanitizeYear(searchParams.get("year") ?? searchParams.get("sectorYear") ?? searchParams.get("mapYear"));
-  const initialGas = sanitizeGas(searchParams.get("gas") ?? searchParams.get("trendGas") ?? searchParams.get("mapGas"));
+  const initialYear = sanitizeYear(
+    searchParams.get("year") ?? searchParams.get("sectorYear") ?? searchParams.get("mapYear"),
+  );
+  const initialGas = sanitizeGas(
+    searchParams.get("gas") ?? searchParams.get("trendGas") ?? searchParams.get("mapGas"),
+  );
 
   const [country, setCountry] = useState(initialCountry);
   const [year, setYear] = useState(initialYear);
@@ -82,17 +80,20 @@ export function DashboardPage() {
     [country, effectiveSectorYear, gas],
   );
 
-  const updateQuery = useCallback((next: Partial<typeof query>) => {
-    const merged = { ...query, ...next };
-    const params = new URLSearchParams();
+  const updateQuery = useCallback(
+    (next: Partial<typeof query>) => {
+      const merged = { ...query, ...next };
+      const params = new URLSearchParams();
 
-    if (merged.country !== DEFAULT_COUNTRY) params.set("country", merged.country);
-    if (merged.year !== DEFAULT_YEAR) params.set("year", String(merged.year));
-    if (merged.gas !== DEFAULT_GAS) params.set("gas", merged.gas);
+      if (merged.country !== DEFAULT_COUNTRY) params.set("country", merged.country);
+      if (merged.year !== DEFAULT_YEAR) params.set("year", String(merged.year));
+      if (merged.gas !== DEFAULT_GAS) params.set("gas", merged.gas);
 
-    const href = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-    router.replace(href, { scroll: false });
-  }, [pathname, query, router]);
+      const href = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      router.replace(href, { scroll: false });
+    },
+    [pathname, query, router],
+  );
 
   useEffect(() => {
     if (effectiveSectorYear === year) return;
@@ -126,24 +127,26 @@ export function DashboardPage() {
 
   return (
     <Box
-      component="main"
       sx={{
         bgcolor: cohereTokens.colors.canvas,
-        minHeight: "100vh",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
         overflow: { md: "hidden" },
       }}
     >
       <Box
         sx={{
-          height: { md: "100dvh" },
+          flex: 1,
           maxWidth: 1600,
           mx: "auto",
           px: { xs: 2, sm: 3, md: 2.5, xl: 3 },
           py: { xs: 3, md: 1.5 },
+          width: "100%",
         }}
       >
         <Stack spacing={{ xs: 3, md: 1.35 }} sx={{ height: { md: "100%" }, minHeight: 0 }}>
-          <Header />
+          <DashboardTitle />
           <DashboardControls
             availableSectorYears={availableSectorYears}
             countries={countryOptions}
@@ -190,7 +193,11 @@ export function DashboardPage() {
                 title="World emissions map"
                 subtitle={`${effectiveMapYear} · ${gasLabel(gas)} emissions`}
                 controls={
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={cohereTokens.spacing.md} sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={cohereTokens.spacing.md}
+                    sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}
+                  >
                     <YearSelect
                       id="map-year"
                       label="Year"
@@ -215,163 +222,57 @@ export function DashboardPage() {
   function renderTrend() {
     if (trend.isLoading || countries.isLoading) return <ChartSkeleton />;
     if (trend.isError) return <ChartError onRetry={() => void trend.refetch()} />;
-    if (!trend.data) return (
-      <ChartEmpty
-        message="Awaiting selection. Choose a country and gas to see historical emission trends since 1990."
-      />
-    );
+    if (!trend.data)
+      return (
+        <ChartEmpty message="Awaiting selection. Choose a country and gas to see historical emission trends since 1990." />
+      );
     return <TrendChart data={trend.data} />;
   }
 
   function renderSector() {
     if (sector.isLoading || countries.isLoading) return <ChartSkeleton />;
     if (sector.isError) return <ChartError onRetry={() => void sector.refetch()} />;
-    if (!sector.data) return (
-      <ChartEmpty
-        message="Sector data unavailable for this view. Try selecting a different reporting year or country."
-      />
-    );
-    const maxSectorYear = availableSectorYears.length > 0
-      ? Math.max(...availableSectorYears)
-      : undefined;
+    if (!sector.data)
+      return (
+        <ChartEmpty message="Sector data unavailable for this view. Try selecting a different reporting year or country." />
+      );
+    const maxSectorYear =
+      availableSectorYears.length > 0 ? Math.max(...availableSectorYears) : undefined;
     return <SectorChart data={sector.data} maxAvailableYear={maxSectorYear} />;
   }
 
   function renderMap() {
     if (map.isLoading) return <ChartSkeleton />;
     if (map.isError) return <ChartError onRetry={() => void map.refetch()} />;
-    if (!map.data) return (
-      <ChartEmpty
-        message="Global dataset could not be loaded for the selected year."
-      />
-    );
+    if (!map.data)
+      return <ChartEmpty message="Global dataset could not be loaded for the selected year." />;
     return <WorldMap data={map.data} onSelectCountry={handleCountry} selectedCountry={country} />;
   }
 }
 
-function Header() {
-  const { data: session } = useSession();
-
+function DashboardTitle() {
   return (
     <Box
-      component="header"
       sx={{
-        alignItems: "center",
         borderBottom: `1px solid ${cohereTokens.colors.hairline}`,
-        display: "flex",
-        gap: cohereTokens.spacing.md,
-        justifyContent: "space-between",
-        pb: { xs: 2, md: 1 },
+        pb: 1.5,
       }}
     >
-      <Stack direction="row" spacing={cohereTokens.spacing.md} sx={{ alignItems: "center", minWidth: 0 }}>
-        <Box
-          sx={{
-            alignItems: "center",
-            bgcolor: cohereTokens.colors.primary,
-            borderRadius: cohereTokens.rounded.sm,
-            color: cohereTokens.colors.canvas,
-            display: "flex",
-            flexShrink: 0,
-            height: { xs: 40, md: 34 },
-            justifyContent: "center",
-            width: { xs: 40, md: 34 },
-          }}
-        >
-          <AutoGraphIcon aria-hidden="true" fontSize="small" />
-        </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            component="h1"
-            variant="h1"
-            sx={{
-              fontSize: { xs: 28, sm: 34, md: 34 },
-              lineHeight: 1.05,
-              letterSpacing: 0,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: { md: "nowrap" },
-            }}
-          >
-            Global Greenhouse Gas Emissions
-          </Typography>
-          <Typography
-            color="text.secondary"
-            sx={{
-              mt: "2px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: { md: "nowrap" },
-            }}
-            variant="body2"
-          >
-            Analytical overview · scoped filters · data integrity indicators
-          </Typography>
-        </Box>
-      </Stack>
-
-      <Stack direction="row" spacing={cohereTokens.spacing.sm} sx={{ alignItems: "center" }}>
-        {session?.user.role === "ADMIN" && (
-          <Tooltip title="Admin Dashboard">
-            <Button
-              component={Link}
-              href="/admin"
-              size="small"
-              startIcon={<AdminPanelSettingsIcon />}
-              sx={{
-                color: cohereTokens.colors.forestGreen,
-                display: { xs: "none", sm: "flex" },
-                fontWeight: 600,
-              }}
-            >
-              Admin
-            </Button>
-          </Tooltip>
-        )}
-
-        {session ? (
-          <Button
-            component={Link}
-            href="/auth/signout"
-            size="small"
-            startIcon={<LogoutIcon />}
-            variant="outlined"
-            sx={{
-              borderColor: cohereTokens.colors.borderLight,
-              borderRadius: cohereTokens.rounded.pill,
-              color: cohereTokens.colors.bodyMuted,
-              fontSize: 13,
-              fontWeight: 600,
-              "&:hover": {
-                bgcolor: cohereTokens.colors.softEarth,
-                borderColor: cohereTokens.colors.hairline,
-              },
-            }}
-          >
-            Sign out
-          </Button>
-        ) : (
-          <Button
-            component={Link}
-            href="/auth/signin"
-            size="small"
-            startIcon={<LoginIcon />}
-            variant="contained"
-            sx={{
-              bgcolor: cohereTokens.colors.carbonBlack,
-              borderRadius: cohereTokens.rounded.pill,
-              color: cohereTokens.colors.onPrimary,
-              fontSize: 13,
-              fontWeight: 600,
-              "&:hover": {
-                bgcolor: cohereTokens.colors.primary,
-              },
-            }}
-          >
-            Sign in
-          </Button>
-        )}
-      </Stack>
+      <Typography
+        component="h1"
+        variant="h1"
+        sx={{
+          fontSize: { xs: 24, sm: 28 },
+          fontWeight: 600,
+          lineHeight: 1.1,
+          letterSpacing: -0.5,
+        }}
+      >
+        Global Greenhouse Gas Emissions
+      </Typography>
+      <Typography color="text.secondary" sx={{ fontSize: 13, mt: 0.5 }} variant="body2">
+        Analytical overview · scoped filters · data integrity indicators
+      </Typography>
     </Box>
   );
 }

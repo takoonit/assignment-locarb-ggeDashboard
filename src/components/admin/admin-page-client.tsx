@@ -296,8 +296,8 @@ export function AdminPageClient() {
         : sectorPage?.total;
 
   return (
-    <Box component="main" sx={{ bgcolor: cohereTokens.colors.canvas, minHeight: "100vh" }}>
-      <Stack spacing={3} sx={{ maxWidth: 1440, mx: "auto", px: { xs: 2, md: 3 }, py: 3 }}>
+    <Box component="main" sx={{ bgcolor: cohereTokens.colors.canvas, flex: 1, display: "flex", flexDirection: "column" }}>
+      <Stack spacing={3} sx={{ maxWidth: 1440, mx: "auto", px: { xs: 2, md: 3 }, py: 3, width: "100%" }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
