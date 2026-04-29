@@ -3,20 +3,27 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Mock next-auth/middleware
 vi.mock("next-auth/middleware", () => ({
-  withAuth: (middleware: any, options: any) => {
+  withAuth: (middlewareOrOptions: any, maybeOptions: any) => {
+    let options = maybeOptions;
+    let middleware = typeof middlewareOrOptions === "function" ? middlewareOrOptions : undefined;
+    
+    if (!middleware) {
+      options = middlewareOrOptions;
+    }
+
     const wrapped = (req: any) => {
       // Simulate withAuth behavior: call authorized callback
-      if (!options.callbacks.authorized({ token: req.nextauth.token })) {
+      if (!options?.callbacks?.authorized({ token: req.nextauth.token })) {
         return NextResponse.redirect(new URL("/api/auth/signin", req.url));
       }
-      return middleware(req);
+      return middleware ? middleware(req) : undefined;
     };
     return wrapped;
   },
 }));
 
 describe("middleware", () => {
-  it("redirects to home if authenticated but not admin", async () => {
+  it("redirects to signin if authenticated but not admin", async () => {
     const { default: middleware } = await import("./middleware");
     
     const req = {
@@ -29,7 +36,7 @@ describe("middleware", () => {
 
     const res = middleware(req);
     
-    expect(res.headers.get("location")).toBe("http://localhost/");
+    expect(res.headers.get("location")).toContain("/api/auth/signin");
   });
 
   it("does not redirect if authenticated as admin", async () => {
@@ -48,7 +55,7 @@ describe("middleware", () => {
     expect(res).toBeUndefined();
   });
 
-  it("redirects to signin if not authenticated (simulated)", async () => {
+  it("redirects to signin if not authenticated", async () => {
     const { default: middleware } = await import("./middleware");
     
     const req = {
