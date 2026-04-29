@@ -1,6 +1,6 @@
 # GGE Dashboard
 
-Greenhouse Gas Emissions Dashboard & API — a full-stack take-home project demonstrating a production-grade Next.js app with real data, typed API, interactive visualizations, admin CRUD, and full deployment.
+Greenhouse Gas Emissions Dashboard & API — a full-stack take-home project demonstrating a production-grade Next.js app with real data, typed API, interactive visualizations, admin CRUD, and Vercel-ready deployment.
 
 ## Stack
 
@@ -9,18 +9,18 @@ Greenhouse Gas Emissions Dashboard & API — a full-stack take-home project demo
 | Framework | Next.js 16 (App Router) + TypeScript |
 | Database | PostgreSQL on [Neon](https://neon.tech/) + Prisma |
 | UI | MUI (Material Design 3-inspired) + Recharts + react-simple-maps |
-| Auth | Auth.js v5 with GitHub OAuth |
+| Auth | NextAuth/Auth.js with GitHub OAuth |
 | Data fetching | TanStack Query |
 | Validation | Zod |
-| API docs | OpenAPI 3.1 + Scalar |
+| API docs | Scalar UI + OpenAPI 3.1 |
 | Package manager | bun |
 | Deployment | Vercel |
 
 ## Features
 
-- **Public dashboard** — trend line, world map, and sector bar chart, all scoped by country and gas filter with server-side pagination.
-- **Public REST API** — JSON endpoints for countries, annual emissions, and sector shares with consistent `{ data }` / `{ error }` envelopes.
-- **Interactive API docs** — Scalar UI at `/api/docs` backed by a generated OpenAPI 3.1 spec.
+- **Public dashboard** — trend line, world map, and sector bar chart, scoped by country, gas, and year controls.
+- **Public REST API** — JSON endpoints for countries, trend data, map data, sector breakdowns, and selected emission values with consistent `{ data }` / `{ error }` envelopes.
+- **Interactive API docs** — Scalar UI at `/api/docs`, backed by a generated OpenAPI 3.1 document at `/api/openapi`.
 - **Admin CRUD** — role-gated `/admin` page for managing countries, annual emissions, and sector shares with server-side pagination.
 - **Honest null handling** — missing CSV values stay `null` everywhere; the UI and API never substitute `0`.
 
@@ -48,7 +48,7 @@ All secrets are managed in Doppler. Required variables:
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | Neon PostgreSQL connection string (`sslmode=require`) |
-| `NEXTAUTH_SECRET` | ≥ 32 random characters — used by Auth.js |
+| `NEXTAUTH_SECRET` | ≥ 32 random characters — used by NextAuth/Auth.js |
 | `AUTH_GITHUB_ID` | GitHub OAuth App Client ID |
 | `AUTH_GITHUB_SECRET` | GitHub OAuth App Client Secret |
 | `NEXT_PUBLIC_APP_URL` | Public origin, e.g. `http://localhost:3000` |
@@ -115,23 +115,33 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## API docs
 
-Visit `/api/docs` for the interactive Scalar UI. The underlying OpenAPI 3.1 spec is served at `/api/openapi.json`.
+Visit `/api/docs` for the interactive Scalar UI. The underlying OpenAPI 3.1 document is served at `/api/openapi`.
 
 Public endpoints:
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/countries` | List countries |
-| `GET` | `/api/emissions` | Annual emissions (filterable by country, gas, year) |
-| `GET` | `/api/sector-shares` | Sector shares |
+| `GET` | `/api/countries` | List countries for filters and dropdowns |
+| `GET` | `/api/emissions/trend` | Country emissions trend by gas and year range |
+| `GET` | `/api/emissions/map` | World map emissions for one year and gas |
+| `GET` | `/api/emissions/sector` | Sector breakdown for one country and year |
+| `GET` | `/api/emissions/filter` | Single selected country/year/gas value |
+| `GET` | `/api/emissions/map/years` | Available years for the map view |
+| `GET` | `/api/emissions/sector/years` | Available sector years for a selected country |
 
 Admin endpoints (require GitHub sign-in with admin role):
 
 | Method | Path | Description |
 |---|---|---|
-| `POST/PATCH/DELETE` | `/api/countries/:id` | Country CRUD |
-| `POST/PATCH/DELETE` | `/api/emissions/:id` | Annual emission CRUD |
-| `POST/PATCH/DELETE` | `/api/sector-shares/:id` | Sector share CRUD |
+| `GET` | `/api/admin/countries` | Paginated admin country list |
+| `GET` | `/api/admin/emissions` | Paginated admin annual emission list |
+| `GET` | `/api/admin/sector-shares` | Paginated admin sector-share list |
+| `POST` | `/api/countries` | Create country |
+| `PATCH/DELETE` | `/api/countries/:id` | Update or delete country |
+| `POST` | `/api/emissions` | Create annual emission record |
+| `PATCH/DELETE` | `/api/emissions/:id` | Update or delete annual emission record |
+| `POST` | `/api/sector-shares` | Create sector-share record |
+| `PATCH/DELETE` | `/api/sector-shares/:id` | Update or delete sector-share record |
 
 All responses use:
 
