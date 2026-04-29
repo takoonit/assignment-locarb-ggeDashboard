@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Paper, Stack, Typography } from "@mui/material";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import { useRef, useState } from "react";
 import { ChartEmpty } from "@/components/dashboard/chart-card";
 import type { Gas, MapData } from "@/lib/dashboard-types";
-import { formatCompact, gasLabel } from "@/lib/dashboard-types";
+import { formatCompact, formatNumber, formatUnit, gasLabel } from "@/lib/dashboard-types";
 import { cohereTokens } from "@/theme";
 
 type WorldMapProps = {
@@ -20,6 +21,13 @@ type GeographyShape = {
     name?: string;
   };
 };
+
+type TooltipState = {
+  x: number;
+  y: number;
+  name: string;
+  value: number | null;
+} | null;
 
 // ISO numeric (3-digit, zero-padded) → ISO alpha-3
 const NUM_TO_A3: Record<string, string> = {
@@ -51,6 +59,9 @@ const NUM_TO_A3: Record<string, string> = {
 const WORLD_TOPO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapProps) {
+  const [tooltip, setTooltip] = useState<TooltipState>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   if (!data.countries.length) {
     return <ChartEmpty message="No map data available for this selection." />;
   }
@@ -60,17 +71,30 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
   const max = values.length ? Math.max(...values) : 0;
   const byCode = new Map(data.countries.map((c) => [c.countryCode, c]));
 
+  function positionFromEvent(evt: React.MouseEvent) {
+    const rect = containerRef.current?.getBoundingClientRect();
+    return {
+      x: evt.clientX - (rect?.left ?? 0),
+      y: evt.clientY - (rect?.top ?? 0),
+    };
+  }
+
   return (
-    <Stack spacing={cohereTokens.spacing.lg}>
+    <Stack spacing={cohereTokens.spacing.sm} sx={{ height: "100%", minHeight: 0 }}>
       <Box
+        ref={containerRef}
         sx={{
           bgcolor: cohereTokens.colors.paleBlue,
           border: `1px solid ${cohereTokens.colors.cardBorder}`,
           borderRadius: cohereTokens.rounded.sm,
+          flex: 1,
+          minHeight: { xs: 260, md: 0 },
           overflow: "hidden",
+          position: "relative",
         }}
+        onMouseLeave={() => setTooltip(null)}
       >
-        <ComposableMap height={340} projection="geoEqualEarth" projectionConfig={{ scale: 153 }}>
+        <ComposableMap height={224} projection="geoEqualEarth" projectionConfig={{ scale: 132 }}>
           <Geographies geography={WORLD_TOPO_URL}>
             {({ geographies }: { geographies: GeographyShape[] }) =>
               geographies.map((geo) => {
@@ -79,17 +103,27 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
                 const country = code ? byCode.get(code) : undefined;
                 const value = country?.value ?? null;
                 const selected = selectedCountry === code;
+                const displayName = (country?.countryName ?? geo.properties?.name ?? code) || "Unknown";
 
                 return (
                   <Geography
-                    aria-label={`${(country?.countryName ?? geo.properties?.name ?? code) || "Unknown"}: ${
-                      value === null ? "No data" : `${formatCompact(value)} ${data.unit}`
+                    aria-label={`${displayName}: ${
+                      value === null ? "No data" : `${formatCompact(value)} ${formatUnit(data.unit)}`
                     }`}
                     geography={geo}
                     key={geo.rsmKey}
                     onClick={() => {
                       if (country) onSelectCountry(country.countryCode);
                     }}
+                    onMouseEnter={(evt: React.MouseEvent) => {
+                      const { x, y } = positionFromEvent(evt);
+                      setTooltip({ x, y, name: displayName, value });
+                    }}
+                    onMouseMove={(evt: React.MouseEvent) => {
+                      const { x, y } = positionFromEvent(evt);
+                      setTooltip((prev) => (prev ? { ...prev, x, y } : prev));
+                    }}
+                    onMouseLeave={() => setTooltip(null)}
                     role="button"
                     style={{
                       default: {
@@ -100,7 +134,7 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
                       },
                       hover: {
                         fill: country
-                          ? (value === null ? cohereTokens.colors.hairline : cohereTokens.colors.forestGreen)
+                          ? cohereTokens.colors.forestGreen
                           : cohereTokens.colors.softEarth,
                         outline: "none",
                         stroke: cohereTokens.colors.ink,
@@ -110,6 +144,15 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
                         fill: cohereTokens.colors.forestGreen,
                         outline: "none",
                       },
+                      // @ts-expect-error — @types/react-simple-maps omits `focused`; the runtime supports it
+                      focused: {
+                        fill: country
+                          ? cohereTokens.colors.forestGreen
+                          : cohereTokens.colors.softEarth,
+                        outline: "none",
+                        stroke: cohereTokens.colors.focusBlue,
+                        strokeWidth: 2,
+                      },
                     }}
                     tabIndex={country ? 0 : -1}
                   />
@@ -118,56 +161,112 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
             }
           </Geographies>
         </ComposableMap>
+
+        {tooltip ? (
+          <MapTooltip
+            gas={data.gas}
+            unit={formatUnit(data.unit)}
+            x={tooltip.x}
+            y={tooltip.y}
+            name={tooltip.name}
+            value={tooltip.value}
+            year={data.year}
+          />
+        ) : null}
+
       </Box>
-      <MapLegend gas={data.gas} max={max} min={min} unit={data.unit} year={data.year} />
+      <MapLegend max={max} min={min} />
     </Stack>
+  );
+}
+
+function MapTooltip({
+  gas,
+  name,
+  unit,
+  value,
+  x,
+  y,
+  year,
+}: {
+  gas: Gas;
+  name: string;
+  unit: string;
+  value: number | null;
+  x: number;
+  y: number;
+  year: number;
+}) {
+  const OFFSET = 14;
+  return (
+    <Paper
+      elevation={4}
+      sx={{
+        borderRadius: cohereTokens.rounded.xs,
+        left: x + OFFSET,
+        maxWidth: 220,
+        pointerEvents: "none",
+        position: "absolute",
+        px: 1.5,
+        py: 1,
+        top: y + OFFSET,
+        zIndex: 10,
+      }}
+    >
+      <Typography
+        sx={{ fontWeight: 600, fontSize: cohereTokens.typography.micro.fontSize, lineHeight: 1.4 }}
+      >
+        {name}
+      </Typography>
+      <Typography
+        color="text.secondary"
+        sx={{ fontSize: cohereTokens.typography.micro.fontSize, lineHeight: 1.4 }}
+      >
+        {year} {gasLabel(gas)}:{" "}
+        {value === null ? "No data" : `${formatNumber(value)} ${unit}`}
+      </Typography>
+    </Paper>
   );
 }
 
 function colorForValue(value: number | null, min: number, max: number, gas: Gas, tracked: boolean) {
   if (!tracked) return cohereTokens.colors.softEarth;
-  if (value === null) return cohereTokens.colors.hairline;
+  // Distinct no-data color: muted slate, clearly different from scale steps
+  if (value === null) return "#c8d4d0";
   if (max <= min) return cohereTokens.colors.actionBlue;
 
   const ratio = (value - min) / (max - min);
+  // Five-step sequential scale — lowest step is visibly different from null gray
   if (ratio > 0.8) return cohereTokens.colors.forestGreen;
   if (ratio > 0.6) return cohereTokens.colors.primary;
   if (ratio > 0.4) return cohereTokens.colors.actionBlue;
   if (ratio > 0.2) return gas === "TOTAL" ? cohereTokens.colors.slate : cohereTokens.colors.warningAmber;
-  return cohereTokens.colors.hairline;
+  return "#a8c5be"; // low but tracked — visibly lighter than null gray
 }
 
 function MapLegend({
-  gas,
   max,
   min,
-  unit,
-  year,
 }: {
-  gas: Gas;
   max: number;
   min: number;
-  unit: string;
-  year: number;
 }) {
   return (
     <Box
       sx={{
         alignItems: "center",
         display: "flex",
+        flexShrink: 0,
         flexWrap: "wrap",
         gap: 1.25,
-        justifyContent: "space-between",
+        justifyContent: "flex-end",
       }}
     >
-      <Typography color="text.secondary" variant="body2">
-        {year} · {gasLabel(gas)} emissions · {unit}
-      </Typography>
       <Box sx={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 1 }}>
         <Typography variant="caption">Low</Typography>
         <Box sx={{ display: "flex" }}>
           {[
-            cohereTokens.colors.hairline,
+            "#a8c5be",
             cohereTokens.colors.slate,
             cohereTokens.colors.actionBlue,
             cohereTokens.colors.primary,
@@ -182,8 +281,7 @@ function MapLegend({
         </Typography>
         <Box
           sx={{
-            bgcolor: cohereTokens.colors.hairline,
-            border: `1px dashed ${cohereTokens.colors.slate}`,
+            bgcolor: "#c8d4d0",
             height: 10,
             ml: 1,
             width: 18,

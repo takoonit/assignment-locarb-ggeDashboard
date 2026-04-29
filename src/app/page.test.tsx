@@ -110,12 +110,7 @@ function lastUrlFor(fetchMock: ReturnType<typeof mockFetch>, path: string) {
 
 async function waitForYearOptions(region: HTMLElement) {
   await waitFor(() => {
-    const yearSelect = within(region).getByLabelText(/year/i) as HTMLSelectElement;
-    expect([...yearSelect.options].map((option) => option.value)).toEqual([
-      "2022",
-      "2020",
-      "2019",
-    ]);
+    expect(within(region).getByText("2020")).toBeInTheDocument();
   });
 }
 
@@ -144,22 +139,30 @@ describe("Epic 3 dashboard", () => {
     const trend = await screen.findByRole("region", { name: /emissions trend/i });
     const sector = screen.getByRole("region", { name: /sector breakdown/i });
     const map = screen.getByRole("region", { name: /world emissions map/i });
+    const dashboardControls = screen.getByRole("toolbar", { name: /dashboard filters/i });
 
-    expect(within(trend).getByLabelText(/trend country/i)).toBeInTheDocument();
-    expect(within(trend).getByRole("radiogroup", { name: /trend gas/i })).toBeInTheDocument();
+    expect(within(dashboardControls).getByLabelText(/^country$/i)).toBeInTheDocument();
+    expect(within(dashboardControls).getByRole("radiogroup", { name: /^gas$/i })).toBeInTheDocument();
+    expect(within(dashboardControls).getByText(/^year$/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^context$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("Takoon Chiengtong")).not.toBeInTheDocument();
+
+    expect(within(trend).queryByLabelText(/country/i)).not.toBeInTheDocument();
+    expect(within(trend).queryByRole("radiogroup", { name: /trend gas/i })).not.toBeInTheDocument();
     expect(within(trend).queryByLabelText(/trend year/i)).not.toBeInTheDocument();
 
-    expect(within(sector).getByLabelText(/sector country/i)).toBeInTheDocument();
-    expect(within(sector).getByLabelText(/sector year/i)).toBeInTheDocument();
+    expect(within(sector).queryByLabelText(/sector country/i)).not.toBeInTheDocument();
+    expect(within(sector).queryByLabelText(/sector year selection/i)).not.toBeInTheDocument();
     expect(within(sector).queryByRole("radiogroup", { name: /sector gas/i })).not.toBeInTheDocument();
 
-    expect(within(map).getByLabelText(/map year/i)).toBeInTheDocument();
-    expect(within(map).getByRole("radiogroup", { name: /map gas/i })).toBeInTheDocument();
+    expect(within(map).getByText("2020")).toBeInTheDocument();
+    expect(within(map).getByText(/^year$/i)).toBeInTheDocument();
+    expect(within(map).queryByRole("radiogroup", { name: /map gas/i })).not.toBeInTheDocument();
     expect(await within(map).findByText("Low")).toBeInTheDocument();
     expect(within(map).getByText("High")).toBeInTheDocument();
     expect(within(map).getByText("No data")).toBeInTheDocument();
 
-    await waitForYearOptions(sector);
+    await waitForYearOptions(dashboardControls);
   }, 10_000);
 
   it("initializes API requests from URL query defaults", async () => {
@@ -194,13 +197,12 @@ describe("Epic 3 dashboard", () => {
     renderDashboard();
 
     await screen.findByRole("region", { name: /emissions trend/i });
-    await waitForYearOptions(screen.getByRole("region", { name: /sector breakdown/i }));
+    await waitForYearOptions(screen.getByRole("toolbar", { name: /dashboard filters/i }));
     const sectorCallsBefore = fetchMock.mock.calls.filter(
       ([input]) => new URL(input.toString(), "http://localhost").pathname === "/api/emissions/sector",
     ).length;
 
-    const trend = screen.getByRole("region", { name: /emissions trend/i });
-    fireEvent.click(within(trend).getByRole("radio", { name: "HFC" }));
+    fireEvent.click(screen.getByRole("radio", { name: "HFC" }));
 
     await waitFor(() => {
       expect(lastUrlFor(fetchMock, "/api/emissions/trend").searchParams.get("gas")).toBe("HFC");

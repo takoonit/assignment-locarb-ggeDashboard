@@ -1,11 +1,11 @@
 export const GAS_OPTIONS = [
-  { value: "TOTAL", label: "Total" },
-  { value: "CO2", label: "CO2" },
-  { value: "CH4", label: "CH4" },
-  { value: "N2O", label: "N2O" },
-  { value: "HFC", label: "HFC" },
-  { value: "PFC", label: "PFC" },
-  { value: "SF6", label: "SF6" },
+  { value: "TOTAL", label: "Total", title: "Total greenhouse gases (CO₂e)" },
+  { value: "CO2", label: "CO2", title: "Carbon dioxide" },
+  { value: "CH4", label: "CH4", title: "Methane" },
+  { value: "N2O", label: "N2O", title: "Nitrous oxide" },
+  { value: "HFC", label: "HFC", title: "Hydrofluorocarbons" },
+  { value: "PFC", label: "PFC", title: "Perfluorocarbons" },
+  { value: "SF6", label: "SF6", title: "Sulfur hexafluoride" },
 ] as const;
 
 export type Gas = (typeof GAS_OPTIONS)[number]["value"];
@@ -73,6 +73,12 @@ export function isGas(value: string | null): value is Gas {
 export function gasLabel(gas: Gas) {
   if (gas === "TOTAL") return "Total GHG";
   return gas;
+}
+
+export function formatUnit(unit: string) {
+  if (unit === "kt_co2e") return "kt CO₂e";
+  if (unit === "percent") return "%";
+  return unit;
 }
 
 export function formatNumber(value: number | null | undefined) {

@@ -7,7 +7,7 @@ export const cohereTokens = {
     ink: "#1f2926",
     forestGreen: "#0b3d2e",
     darkTeal: "#082f38",
-    canvas: "#ffffff",
+    canvas: "#fafaf8",
     softEarth: "#f0eee7",
     paleGreen: "#eef8ef",
     paleBlue: "#eef6fb",
@@ -27,8 +27,8 @@ export const cohereTokens = {
     error: "#b42318",
   },
   font: {
-    display: "Inter, ui-sans-serif, system-ui, Arial, sans-serif",
-    ui: "Inter, ui-sans-serif, system-ui, Arial, sans-serif",
+    display: "CohereText, Inter, ui-sans-serif, system-ui, Arial, sans-serif",
+    ui: "Unica77 Cohere Web, Inter, ui-sans-serif, system-ui, Arial, sans-serif",
     mono: "JetBrains Mono, ui-monospace, SFMono-Regular, Consolas, monospace",
   },
   typography: {

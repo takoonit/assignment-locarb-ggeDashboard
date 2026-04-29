@@ -4,12 +4,11 @@ import {
   Box,
   Button,
   Card,
-  CardContent,
-  CardHeader,
   Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type { ReactNode } from "react";
 import { cohereTokens } from "@/theme";
 
@@ -19,9 +18,10 @@ type ChartCardProps = {
   controls?: ReactNode;
   children: ReactNode;
   tall?: boolean;
+  sx?: SxProps<Theme>;
 };
 
-export function ChartCard({ title, subtitle, controls, children, tall = false }: ChartCardProps) {
+export function ChartCard({ title, subtitle, controls, children, tall = false, sx }: ChartCardProps) {
   const titleId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-title`;
 
   return (
@@ -30,81 +30,96 @@ export function ChartCard({ title, subtitle, controls, children, tall = false }:
       aria-labelledby={titleId}
       role="region"
       sx={{
-        borderColor: cohereTokens.colors.cardBorder,
-        borderRadius: cohereTokens.rounded.sm,
+        borderRadius: `${cohereTokens.rounded.lg}px`,
+        display: "flex",
+        flexDirection: "column",
         height: "100%",
+        minHeight: 0,
         overflow: "hidden",
+        ...sx,
       }}
     >
-      <CardHeader
-        title={
+      <Box
+        sx={{
+          alignItems: { xs: "stretch", sm: "flex-start" },
+          borderBottom: `1px solid ${cohereTokens.colors.cardBorder}`,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1,
+          justifyContent: "space-between",
+          px: { xs: 2, md: 1.75 },
+          pt: { xs: 2, md: 1.35 },
+          pb: { xs: 1.5, md: 1.1 },
+        }}
+      >
+        <Box sx={{ minWidth: 0 }}>
           <Typography
             id={titleId}
             component="h2"
             variant="h3"
+            sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+          >
+            {title}
+          </Typography>
+          <Typography
+            variant="body2"
             sx={{
+              color: cohereTokens.colors.bodyMuted,
+              mt: "2px",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
-            {title}
-          </Typography>
-        }
-        subheader={
-          <Typography
-            variant="body2"
-            sx={{
-              color: cohereTokens.colors.bodyMuted,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-              mt: cohereTokens.spacing.xs,
-            }}
-          >
             {subtitle}
           </Typography>
-        }
-        action={controls}
+        </Box>
+        {controls ? (
+          <Box sx={{ flexShrink: 0 }}>
+            {controls}
+          </Box>
+        ) : null}
+      </Box>
+
+      <Box
         sx={{
-          alignItems: "flex-start",
-          borderBottom: `1px solid ${cohereTokens.colors.cardBorder}`,
-          display: "flex",
-          flexDirection: "column",
-          gap: cohereTokens.spacing.lg,
-          p: { xs: cohereTokens.spacing.lg, md: cohereTokens.spacing.xl },
-          "& .MuiCardHeader-content": {
-            width: "100%",
-            minWidth: 0, // Allow shrinking for truncate
-          },
-          "& .MuiCardHeader-action": {
-            alignSelf: "center",
-            m: 0,
-            width: "100%",
-          },
-        }}
-      />
-      <CardContent
-        sx={{
-          minHeight: tall ? { xs: 360, md: 480 } : 360,
-          p: { xs: cohereTokens.spacing.lg, md: cohereTokens.spacing.xl },
-          position: "relative",
-          "&:last-child": { pb: { xs: cohereTokens.spacing.lg, md: cohereTokens.spacing.xl } },
+          flex: 1,
+          minHeight: { xs: tall ? 300 : 240, md: 0 },
+          overflow: "hidden",
+          px: { xs: 2, md: 1.75 },
+          py: { xs: 2, md: 1.25 },
         }}
       >
         {children}
-      </CardContent>
+      </Box>
     </Card>
   );
 }
 
 export function ChartSkeleton({ label = "Loading data" }: { label?: string }) {
   return (
-    <Stack aria-label={label} role="status" spacing={1.5}>
-      <Skeleton height={28} variant="rounded" />
-      <Skeleton height={250} variant="rounded" />
-      <Skeleton height={18} width="55%" />
+    <Stack aria-label={label} role="status" spacing={1} sx={{ height: "100%" }}>
+      <Skeleton height={18} width="32%" />
+      <Box
+        sx={{
+          alignItems: "end",
+          display: "grid",
+          flex: 1,
+          gap: 1,
+          gridTemplateColumns: "repeat(8, minmax(0, 1fr))",
+          minHeight: 120,
+        }}
+      >
+        {[38, 54, 46, 70, 64, 82, 58, 76].map((height, index) => (
+          <Skeleton
+            height={`${height}%`}
+            key={`${height}-${index}`}
+            sx={{ minHeight: 34 }}
+            variant="rounded"
+          />
+        ))}
+      </Box>
+      <Skeleton height={14} width="44%" />
     </Stack>
   );
 }

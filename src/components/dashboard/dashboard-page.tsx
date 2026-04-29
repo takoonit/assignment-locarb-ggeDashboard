@@ -1,7 +1,7 @@
 "use client";
 
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChartCard, ChartEmpty, ChartError, ChartSkeleton } from "@/components/dashboard/chart-card";
@@ -17,13 +17,14 @@ import {
   useSectorData,
   useTrendData,
 } from "@/hooks/use-dashboard-data";
-import type { Gas } from "@/lib/dashboard-types";
+import type { CountryOption, Gas } from "@/lib/dashboard-types";
 import { gasLabel, isGas } from "@/lib/dashboard-types";
 import { cohereTokens } from "@/theme";
 
 const DEFAULT_COUNTRY = "THA";
 const DEFAULT_YEAR = 2020;
 const DEFAULT_GAS: Gas = "TOTAL";
+const FALLBACK_AVAILABLE_YEARS = [2022, 2020, 2019];
 
 export function DashboardPage() {
   const router = useRouter();
@@ -31,13 +32,11 @@ export function DashboardPage() {
   const searchParams = useSearchParams();
 
   const initialCountry = sanitizeCountry(searchParams.get("country"));
-  const initialSectorYear = sanitizeYear(searchParams.get("sectorYear"));
-  const initialMapYear = sanitizeYear(searchParams.get("mapYear"));
-  const initialGas = sanitizeGas(searchParams.get("gas"));
+  const initialYear = sanitizeYear(searchParams.get("year") ?? searchParams.get("sectorYear") ?? searchParams.get("mapYear"));
+  const initialGas = sanitizeGas(searchParams.get("gas") ?? searchParams.get("trendGas") ?? searchParams.get("mapGas"));
 
   const [country, setCountry] = useState(initialCountry);
-  const [sectorYear, setSectorYear] = useState(initialSectorYear);
-  const [mapYear, setMapYear] = useState(initialMapYear);
+  const [year, setYear] = useState(initialYear);
   const [gas, setGas] = useState<Gas>(initialGas);
 
   const countries = useCountries();
@@ -49,25 +48,33 @@ export function DashboardPage() {
   const sectorYearOptions = useAvailableSectorYears(country);
   const mapYearOptions = useAvailableMapYears();
 
-  const availableSectorYears = useMemo(() => sectorYearOptions.data ?? [], [sectorYearOptions.data]);
-  const availableMapYears = useMemo(() => mapYearOptions.data ?? [], [mapYearOptions.data]);
+  const availableSectorYears = useMemo(
+    () => sectorYearOptions.data ?? FALLBACK_AVAILABLE_YEARS,
+    [sectorYearOptions.data],
+  );
+  const availableMapYears = useMemo(
+    () => mapYearOptions.data ?? FALLBACK_AVAILABLE_YEARS,
+    [mapYearOptions.data],
+  );
 
+  // Snap to the closest available year if the selected year has no data for this country.
   const effectiveSectorYear = useMemo(() => {
-    if (availableSectorYears.length === 0 || availableSectorYears.includes(sectorYear)) return sectorYear;
-    return closestAvailableYear(sectorYear, availableSectorYears);
-  }, [availableSectorYears, sectorYear]);
+    if (availableSectorYears.length === 0 || availableSectorYears.includes(year)) return year;
+    return closestAvailableYear(year, availableSectorYears);
+  }, [availableSectorYears, year]);
 
+  // Snap to the closest available year if the selected year has no global map data.
   const effectiveMapYear = useMemo(() => {
-    if (availableMapYears.length === 0 || availableMapYears.includes(mapYear)) return mapYear;
-    return closestAvailableYear(mapYear, availableMapYears);
-  }, [availableMapYears, mapYear]);
+    if (availableMapYears.length === 0 || availableMapYears.includes(year)) return year;
+    return closestAvailableYear(year, availableMapYears);
+  }, [availableMapYears, year]);
 
   const sector = useSectorData(country, effectiveSectorYear);
   const map = useMapData(effectiveMapYear, gas);
 
   const query = useMemo(
-    () => ({ country, sectorYear: effectiveSectorYear, mapYear: effectiveMapYear, gas }),
-    [country, effectiveSectorYear, effectiveMapYear, gas],
+    () => ({ country, year: effectiveSectorYear, gas }),
+    [country, effectiveSectorYear, gas],
   );
 
   const updateQuery = useCallback((next: Partial<typeof query>) => {
@@ -75,8 +82,7 @@ export function DashboardPage() {
     const params = new URLSearchParams();
 
     if (merged.country !== DEFAULT_COUNTRY) params.set("country", merged.country);
-    if (merged.sectorYear !== DEFAULT_YEAR) params.set("sectorYear", String(merged.sectorYear));
-    if (merged.mapYear !== DEFAULT_YEAR) params.set("mapYear", String(merged.mapYear));
+    if (merged.year !== DEFAULT_YEAR) params.set("year", String(merged.year));
     if (merged.gas !== DEFAULT_GAS) params.set("gas", merged.gas);
 
     const href = params.toString() ? `${pathname}?${params.toString()}` : pathname;
@@ -84,14 +90,14 @@ export function DashboardPage() {
   }, [pathname, query, router]);
 
   useEffect(() => {
-    if (effectiveSectorYear === sectorYear) return;
-    updateQuery({ sectorYear: effectiveSectorYear });
-  }, [effectiveSectorYear, updateQuery, sectorYear]);
+    if (effectiveSectorYear === year) return;
+    updateQuery({ year: effectiveSectorYear });
+  }, [effectiveSectorYear, updateQuery, year]);
 
   useEffect(() => {
-    if (effectiveMapYear === mapYear) return;
-    updateQuery({ mapYear: effectiveMapYear });
-  }, [effectiveMapYear, updateQuery, mapYear]);
+    if (effectiveMapYear === year) return;
+    updateQuery({ year: effectiveMapYear });
+  }, [effectiveMapYear, updateQuery, year]);
 
   function handleCountry(nextCountry: string) {
     setCountry(nextCountry);
@@ -99,13 +105,13 @@ export function DashboardPage() {
   }
 
   function handleSectorYear(nextYear: number) {
-    setSectorYear(nextYear);
-    updateQuery({ sectorYear: nextYear });
+    setYear(nextYear);
+    updateQuery({ year: nextYear });
   }
 
   function handleMapYear(nextYear: number) {
-    setMapYear(nextYear);
-    updateQuery({ mapYear: nextYear });
+    setYear(nextYear);
+    updateQuery({ year: nextYear });
   }
 
   function handleGas(nextGas: Gas) {
@@ -114,33 +120,54 @@ export function DashboardPage() {
   }
 
   return (
-    <Box component="main" sx={{ bgcolor: cohereTokens.colors.canvas, minHeight: "100vh" }}>
-      <Container maxWidth={false} sx={{ maxWidth: 1480, px: { xs: cohereTokens.spacing.lg, md: cohereTokens.spacing.xxl }, py: cohereTokens.spacing.xxl }}>
-        <Stack spacing={cohereTokens.spacing.xl}>
-          <Header selectedCountryName={selectedCountryName} gas={gas} year={effectiveSectorYear} />
+    <Box
+      component="main"
+      sx={{
+        bgcolor: cohereTokens.colors.canvas,
+        minHeight: "100vh",
+        overflow: { md: "hidden" },
+      }}
+    >
+      <Box
+        sx={{
+          height: { md: "100dvh" },
+          maxWidth: 1600,
+          mx: "auto",
+          px: { xs: 2, sm: 3, md: 2.5, xl: 3 },
+          py: { xs: 3, md: 1.5 },
+        }}
+      >
+        <Stack spacing={{ xs: 3, md: 1.35 }} sx={{ height: { md: "100%" }, minHeight: 0 }}>
+          <Header />
+          <DashboardControls
+            availableSectorYears={availableSectorYears}
+            countries={countryOptions}
+            country={country}
+            effectiveSectorYear={effectiveSectorYear}
+            gas={gas}
+            onCountryChange={handleCountry}
+            onGasChange={handleGas}
+            onSectorYearChange={handleSectorYear}
+            sectorYearSnapped={effectiveSectorYear !== year}
+          />
 
           <Box
             sx={{
+              alignItems: "stretch",
               display: "grid",
-              gap: cohereTokens.spacing.xl,
-              gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.35fr) minmax(360px, 0.65fr)" },
+              flex: { md: 1 },
+              gap: { xs: 2, md: 1.5 },
+              gridTemplateColumns: {
+                xs: "1fr",
+                lg: "minmax(0, 1.45fr) minmax(320px, 0.55fr)",
+              },
+              gridTemplateRows: { lg: "minmax(258px, 0.43fr) minmax(0, 0.57fr)" },
+              minHeight: 0,
             }}
           >
             <ChartCard
               title="Emissions trend"
               subtitle={`${selectedCountryName} · ${gasLabel(gas)} · Full available range`}
-              controls={
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={cohereTokens.spacing.md} sx={{ flexWrap: "wrap" }}>
-                  <CountrySelect
-                    countries={countryOptions}
-                    id="trend-country"
-                    label="Trend country"
-                    onChange={handleCountry}
-                    value={country}
-                  />
-                  <GasControl ariaLabel="Trend gas" onChange={handleGas} value={gas} />
-                </Stack>
-              }
             >
               {renderTrend()}
             </ChartCard>
@@ -148,34 +175,26 @@ export function DashboardPage() {
             <ChartCard
               title="Sector breakdown"
               subtitle={`${selectedCountryName} · ${effectiveSectorYear} · CO2 share of fuel combustion`}
-              controls={
-                <YearSelect
-                  id="sector-year"
-                  label="Sector year"
-                  onChange={handleSectorYear}
-                  value={effectiveSectorYear}
-                  years={availableSectorYears}
-                />
-              }
             >
               {renderSector()}
             </ChartCard>
 
-            <Box sx={{ gridColumn: "1 / -1" }}>
+            <Box sx={{ gridColumn: "1 / -1", minHeight: 0 }}>
               <ChartCard
                 tall
                 title="World emissions map"
                 subtitle={`${effectiveMapYear} · ${gasLabel(gas)} emissions`}
                 controls={
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={cohereTokens.spacing.md} sx={{ flexWrap: "wrap" }}>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={cohereTokens.spacing.md} sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}>
                     <YearSelect
                       id="map-year"
-                      label="Map year"
+                      label="Year"
+                      ariaLabel="Map year selection"
                       onChange={handleMapYear}
                       value={effectiveMapYear}
                       years={availableMapYears}
+                      snapped={effectiveMapYear !== year}
                     />
-                    <GasControl ariaLabel="Map gas" onChange={handleGas} value={gas} />
                   </Stack>
                 }
               >
@@ -184,7 +203,7 @@ export function DashboardPage() {
             </Box>
           </Box>
         </Stack>
-      </Container>
+      </Box>
     </Box>
   );
 
@@ -192,8 +211,8 @@ export function DashboardPage() {
     if (trend.isLoading || countries.isLoading) return <ChartSkeleton />;
     if (trend.isError) return <ChartError onRetry={() => void trend.refetch()} />;
     if (!trend.data) return (
-      <ChartEmpty 
-        message="Awaiting selection. Choose a country and gas to see historical emission trends since 1990." 
+      <ChartEmpty
+        message="Awaiting selection. Choose a country and gas to see historical emission trends since 1990."
       />
     );
     return <TrendChart data={trend.data} />;
@@ -203,48 +222,42 @@ export function DashboardPage() {
     if (sector.isLoading || countries.isLoading) return <ChartSkeleton />;
     if (sector.isError) return <ChartError onRetry={() => void sector.refetch()} />;
     if (!sector.data) return (
-      <ChartEmpty 
-        message="Sector data unavailable for this view. Try selecting a different reporting year or country." 
+      <ChartEmpty
+        message="Sector data unavailable for this view. Try selecting a different reporting year or country."
       />
     );
-    return <SectorChart data={sector.data} />;
+    const maxSectorYear = availableSectorYears.length > 0
+      ? Math.max(...availableSectorYears)
+      : undefined;
+    return <SectorChart data={sector.data} maxAvailableYear={maxSectorYear} />;
   }
 
   function renderMap() {
     if (map.isLoading) return <ChartSkeleton />;
     if (map.isError) return <ChartError onRetry={() => void map.refetch()} />;
     if (!map.data) return (
-      <ChartEmpty 
-        message="Global dataset could not be loaded for the selected year." 
+      <ChartEmpty
+        message="Global dataset could not be loaded for the selected year."
       />
     );
     return <WorldMap data={map.data} onSelectCountry={handleCountry} selectedCountry={country} />;
   }
 }
 
-function Header({
-  gas,
-  selectedCountryName,
-  year,
-}: {
-  gas: Gas;
-  selectedCountryName: string;
-  year: number;
-}) {
+function Header() {
   return (
     <Box
       component="header"
       sx={{
-        alignItems: { xs: "flex-start", md: "center" },
+        alignItems: "center",
         borderBottom: `1px solid ${cohereTokens.colors.hairline}`,
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        gap: cohereTokens.spacing.lg,
+        gap: cohereTokens.spacing.md,
         justifyContent: "space-between",
-        pb: cohereTokens.spacing.xl,
+        pb: { xs: 2, md: 1 },
       }}
     >
-      <Stack direction="row" spacing={cohereTokens.spacing.md} sx={{ alignItems: "center" }}>
+      <Stack direction="row" spacing={cohereTokens.spacing.md} sx={{ alignItems: "center", minWidth: 0 }}>
         <Box
           sx={{
             alignItems: "center",
@@ -252,21 +265,22 @@ function Header({
             borderRadius: cohereTokens.rounded.sm,
             color: cohereTokens.colors.canvas,
             display: "flex",
-            height: 42,
+            flexShrink: 0,
+            height: { xs: 40, md: 34 },
             justifyContent: "center",
-            width: 42,
+            width: { xs: 40, md: 34 },
           }}
         >
-
-          <AutoGraphIcon aria-hidden="true" />
+          <AutoGraphIcon aria-hidden="true" fontSize="small" />
         </Box>
         <Box sx={{ minWidth: 0 }}>
           <Typography
             component="h1"
             variant="h1"
             sx={{
-              fontSize: { xs: 34, md: 44, xl: 52 },
-              lineHeight: 1.02,
+              fontSize: { xs: 28, sm: 34, md: 34 },
+              lineHeight: 1.05,
+              letterSpacing: 0,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: { md: "nowrap" },
@@ -277,42 +291,81 @@ function Header({
           <Typography
             color="text.secondary"
             sx={{
-              mt: cohereTokens.spacing.xxs,
+              mt: "2px",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: { md: "nowrap" },
             }}
             variant="body2"
           >
-            Analytical greenhouse gas emissions overview · scoped filters · data integrity indicators
+            Analytical overview · scoped filters · data integrity indicators
           </Typography>
         </Box>
       </Stack>
+    </Box>
+  );
+}
+
+function DashboardControls({
+  availableSectorYears,
+  countries,
+  country,
+  effectiveSectorYear,
+  gas,
+  onCountryChange,
+  onGasChange,
+  onSectorYearChange,
+  sectorYearSnapped,
+}: {
+  availableSectorYears: number[];
+  countries: CountryOption[];
+  country: string;
+  effectiveSectorYear: number;
+  gas: Gas;
+  onCountryChange: (country: string) => void;
+  onGasChange: (gas: Gas) => void;
+  onSectorYearChange: (year: number) => void;
+  sectorYearSnapped: boolean;
+}) {
+  return (
+    <Box
+      aria-label="Dashboard filters"
+      component="div"
+      role="toolbar"
+      sx={{
+        alignItems: { xs: "stretch", md: "center" },
+        display: "inline-flex",
+        flexShrink: 0,
+        maxWidth: "100%",
+        width: "fit-content",
+      }}
+    >
       <Box
         sx={{
-          bgcolor: cohereTokens.colors.forestGreen,
-          borderRadius: cohereTokens.rounded.sm,
-          color: cohereTokens.colors.onDark,
-          flexShrink: 0,
-          maxWidth: { xs: "100%", md: 300 },
-          px: cohereTokens.spacing.xl,
-          py: cohereTokens.spacing.md,
+          alignItems: { xs: "stretch", md: "flex-end" },
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: { xs: cohereTokens.spacing.md, md: cohereTokens.spacing.sm },
         }}
       >
-        <Typography sx={{ color: "rgba(255,255,255,0.7)" }} variant="caption">
-          Current context
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: cohereTokens.font.mono,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-          variant="body2"
-        >
-          {selectedCountryName} · {year} · {gasLabel(gas)}
-        </Typography>
+        <CountrySelect
+          ariaLabel="Country"
+          countries={countries ?? []}
+          id="dashboard-country"
+          label="Country"
+          onChange={onCountryChange}
+          value={country}
+        />
+        <YearSelect
+          ariaLabel="Sector year selection"
+          id="dashboard-sector-year"
+          label="Year"
+          onChange={onSectorYearChange}
+          snapped={sectorYearSnapped}
+          value={effectiveSectorYear}
+          years={availableSectorYears}
+        />
+        <GasControl ariaLabel="Gas" onChange={onGasChange} value={gas} />
       </Box>
     </Box>
   );

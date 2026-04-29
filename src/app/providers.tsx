@@ -1,8 +1,10 @@
 "use client";
 
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -29,10 +31,12 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <AppRouterCacheProvider>
       <ThemeProvider theme={theme}>
-        <QueryClientProvider client={queryClient}>
-          <CssBaseline />
-          {children}
-        </QueryClientProvider>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <QueryClientProvider client={queryClient}>
+            <CssBaseline />
+            {children}
+          </QueryClientProvider>
+        </LocalizationProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );
