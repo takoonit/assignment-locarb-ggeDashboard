@@ -1,6 +1,6 @@
 # Story B16 - Deploy + Smoke Test
 
-**Epic:** 4 - Admin and Delivery  
+**Epic:** 6 - Delivery  
 **Status:** Todo  
 **Dependencies:** B15  
 

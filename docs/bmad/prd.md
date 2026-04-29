@@ -37,11 +37,22 @@ Build the dashboard shell and visualization cards with scoped controls and safe 
 - B11 - Sector bar chart
 - B12 - Gas filter
 
-### Epic 4 - Admin and Delivery
+### Epic 4 - Admin
 
-Build the admin UI, finalize README, deploy, and smoke test.
+Build the admin UI.
 
 - B13 - Admin CRUD page
+
+### Epic 5 - Advanced Features
+
+Extend the dashboard and admin with richer interactions.
+
+- B20 - Admin table pagination
+
+### Epic 6 - Delivery
+
+Finalize documentation, deploy, and smoke test.
+
 - B15 - README
 - B16 - Deploy + smoke test
 

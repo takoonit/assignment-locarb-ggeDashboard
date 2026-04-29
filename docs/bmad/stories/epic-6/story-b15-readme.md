@@ -1,6 +1,6 @@
 # Story B15 - README
 
-**Epic:** 4 - Admin and Delivery  
+**Epic:** 6 - Delivery  
 **Status:** Todo  
 **Dependencies:** B1-B14  
 
