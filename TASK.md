@@ -3,7 +3,7 @@
 **Project:** Greenhouse Gas Emissions Dashboard & API
 **Owner:** Takoon
 **Source:** Notion `07 - Tasks`
-**Status:** BMAD implementation in progress; next story is B8
+**Status:** BMAD implementation in progress; next story is B13
 
 ---
 
@@ -27,6 +27,7 @@ Use this section first. The detailed task tables below are the source of accepta
 - A1-A9: planning artifacts are complete.
 - B1-B4: Epic 1 (Scaffold, Prisma, Seed, Auth) is complete.
 - B5-B7, B14: Epic 2 (API Read/Write, Error Wrapper, Docs) is complete.
+- B8-B12: Epic 3 (Dashboard) is complete.
 - P1-P5: pre-BMAD cleanup is complete.
 - BMAD readiness gate is green.
 - Main Notion checklist is synced with the repo.
@@ -35,17 +36,13 @@ Use this section first. The detailed task tables below are the source of accepta
 
 ## Next
 
-- B8 - Dashboard shell
-  - Active BMAD story: `docs/bmad/stories/epic-3/story-b8-dashboard-shell.md`.
+- B13 - Admin CRUD page
+  - Active BMAD story: `docs/bmad/stories/epic-4/story-b13-admin-crud-page.md`.
   - Resume pointer: `docs/bmad/current.md`.
-  - Implement the main dashboard layout and responsive shell.
+  - Implement the protected admin CRUD page.
 
 ## Not Started
 
-- B9 - Trend line chart
-- B10 - World map
-- B11 - Sector bar chart
-- B12 - Gas filter
 - B13 - Admin CRUD page
 - B15 - README
 - B16 - Deploy + smoke test
@@ -78,7 +75,7 @@ BMAD implementation may start only when every item below is checked.
 | README aligned | Checked | `README.md` references existing planning docs, includes `TASK.md`, and clarifies that implementation begins at B1. |
 | Notion and repo synced | Checked | Main Notion checklist now matches repo readiness state and points to `07 - Tasks` / `TASK.md`. |
 
-Current gate status: BMAD implementation in progress. Continue from story B8.
+Current gate status: BMAD implementation in progress. Continue from story B13.
 
 ---
 
@@ -127,12 +124,12 @@ Build order after docs are final.
 | B5 | API read endpoints | Done | B3, A6 | Countries, trend, map, sector, and filter endpoints work with Zod validation. |
 | B6 | API error wrapper | Done | B5 | Shared error shape and success shape are used by all routes. |
 | B7 | API write endpoints | Done | B4, B5 | Admin-only create/update/delete exists for countries, annual emissions, and sector shares. |
-| B8 | Dashboard shell | Next | B1, A7 | Responsive layout with header, scoped controls, and main dashboard area. |
-| B9 | Trend line chart | Todo | B5, B8 | Country/gas selection works. Missing years and sparse data render safely. |
-| B10 | World map | Todo | B5, B8 | Year/gas selection works. No-data countries use distinct color. |
-| B11 | Sector bar chart | Todo | B5, B8 | Sector shares render by country/year. Null and zero values are handled safely. |
-| B12 | Gas filter | Todo | B9-B11 | Single-select gas filter controls trend/map and URL state. |
-| B13 | Admin CRUD page | Todo | B7, B8 | `/admin` route is protected by `requireAdmin`; create/edit/delete forms work. |
+| B8 | Dashboard shell | Done | B1, A7 | Responsive layout with header, scoped controls, and main dashboard area. |
+| B9 | Trend line chart | Done | B5, B8 | Country/gas selection works. Missing years and sparse data render safely. |
+| B10 | World map | Done | B5, B8 | Year/gas selection works. No-data countries use distinct color. |
+| B11 | Sector bar chart | Done | B5, B8 | Sector shares render for the selected dashboard country/year. Null and zero values are handled safely. |
+| B12 | Gas filter | Done | B9-B11 | Single-select gas filter controls trend/map and URL state. |
+| B13 | Admin CRUD page | Next | B7, B8 | `/admin` route is protected by `requireAdmin`; create/edit/delete forms work. |
 | B14 | OpenAPI + Scalar docs | Done | B5, B7 | Zod schemas generate `GET /api/openapi`; Scalar renders `GET /api/docs`; docs cover endpoints, params, bodies, responses, and errors without manual YAML. |
 | B15 | README | Todo | B1-B14 | Setup, env vars, seed, run, API docs, screenshots, tradeoffs, and live URL are documented. |
 | B16 | Deploy + smoke test | Todo | B15 | Vercel live URL works. Dashboard, APIs, seed, and auth are verified. |

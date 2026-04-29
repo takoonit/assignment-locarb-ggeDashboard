@@ -49,7 +49,8 @@ year
 gas
 ```
 
-But the UI must present these controls near the chart where they are meaningful.
+Country and gas are dashboard-level controls because the selected country drives trend and sector, while gas drives trend and map.
+Year controls remain near the sector and map cards where they are meaningful.
 
 ## Country selector
 Uses `GET /api/countries`.
@@ -72,7 +73,7 @@ THA
 
 Used by:
 - trend chart
-- sector chart
+- sector chart, as the selected dashboard country
 
 Not used by:
 - world map, except optional selected-country highlight
@@ -117,15 +118,16 @@ Sector data is a sector breakdown, not a gas-by-sector breakdown.
 Top bar
 
 Trend chart card
-- country selector
-- gas selector
+- no card-level controls
 
 Sector chart card
-- country selector
 - year selector
 
 World map card
 - year selector
+
+Dashboard control strip
+- country selector
 - gas selector, default TOTAL
 ```
 
@@ -195,8 +197,8 @@ The first build can use the default full available range.
 
 ## Controls used
 ```plain text
-Country selector
-Gas selector
+Dashboard country selector
+Dashboard gas selector
 ```
 
 ## Controls not used
@@ -263,7 +265,7 @@ GET /api/emissions/sector?country=THA&year=2014
 
 ## Controls used
 ```plain text
-Country selector
+Selected dashboard country
 Year selector
 ```
 
@@ -375,7 +377,7 @@ GET /api/emissions/map?year=2020&gas=TOTAL
 ## Controls used
 ```plain text
 Year selector
-Gas selector
+Dashboard gas selector
 ```
 
 The year selector is required by the core assignment.
@@ -541,12 +543,14 @@ The UI must make data meaning clear:
 # 11. Acceptance Criteria
 This UI spec is ready when:
 - controls are scoped to the chart that uses them
-- trend chart shows country and gas controls in or near the trend card
+- trend chart shows country control in or near the trend card
+- trend chart does not show card-level controls
 - trend chart does not show a year control
-- sector chart shows country and year controls in or near the sector card
+- sector chart follows the selected dashboard country and shows its year control in or near the sector card
 - sector chart does not show a gas control
 - sector chart title is broad but unit is explicit
-- map shows year and gas controls in or near the map card
+- map shows year control in or near the map card
+- a single gas control is shown at dashboard level and controls trend plus map
 - map defaults to TOTAL so the core assignment requirement is satisfied
 - null and zero are visually distinct
 - loading, error, empty, partial, and sparse states are defined

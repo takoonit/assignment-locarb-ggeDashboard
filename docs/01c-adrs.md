@@ -77,7 +77,7 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 ---
 
 # ADR-007: Use react-simple-maps for the world map
-**Status:** Accepted
+**Status:** Superseded by ADR-020
 **Date:** 2026-04-27
 **Context:** The dashboard needs a world map coloured by country emissions.
 **Decision:** Use `react-simple-maps` with bundled TopoJSON data.
@@ -181,3 +181,22 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** The API contract must stay aligned with route handlers, Zod validation, and OpenAPI documentation. The project needs enough confidence without turning the take-home into a large test platform.
 **Decision:** Pending. Options to compare: route-level tests only, route tests plus OpenAPI validation, or broader integration tests.
 **Consequence:** This decision will affect confidence, build time, and how much contract drift can be caught before deployment.
+
+---
+
+# ADR-019: Use dedicated endpoints for available years
+**Status:** Accepted
+**Date:** 2026-04-29
+**Context:** The dashboard year dropdowns need to show only years that have actual data. The existing `/api/emissions/map` and `/api/emissions/sector` endpoints require a specific year as input — they cannot enumerate available years. The original client implementation probed 33–41 years in parallel by calling the data endpoints for each candidate year and filtering out empty responses, producing up to 74 concurrent API calls on dashboard load.
+**Decision:** Add `GET /api/emissions/map/years` and `GET /api/emissions/sector/years?country=XX` as dedicated read endpoints. Each queries the database directly using `distinct` year selection with a `not: null` filter. The map years endpoint is cached client-side with `staleTime: Infinity` since seeded data does not change at runtime.
+**Consequence:** Year enumeration costs one database query per endpoint instead of dozens of round-trips. The client-side probing logic is removed. The two new routes are thin and follow the same `withApiErrorHandling` / `apiSuccess` pattern as existing routes.
+
+---
+
+# ADR-020: Load world map TopoJSON from CDN at runtime
+**Status:** Accepted
+**Supersedes:** ADR-007
+**Date:** 2026-04-29
+**Context:** ADR-007 stated "bundled TopoJSON data" but `world-atlas` TopoJSON cannot be bundled directly via import without a raw-loader or inline JSON import (which adds ~100 KB to the JS bundle). `react-simple-maps` v3 accepts a URL string as the `geography` prop and fetches and parses the TopoJSON internally — this is the canonical usage pattern for the library.
+**Decision:** Pass `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` as the `geography` prop to `<Geographies>`. No bundling or manual `topojson-client` parsing is needed. The map geography uses ISO numeric country IDs which are mapped to ISO alpha-3 codes via a lookup table in the component.
+**Consequence:** The JS bundle does not include the TopoJSON file. The map makes one CDN fetch on first render, cached by the browser thereafter. The implementation stays within the react-simple-maps v3 API without needing `topojson-client` types or manual feature extraction.

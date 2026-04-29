@@ -1,5 +1,6 @@
 # Active Story
 
 Status: none
-Last completed: B14 — OpenAPI / Scalar Docs on 2026-04-28
-Next: see docs/bmad/stories/ for the next story in sequence
+Last completed: B12 — Gas Filter on 2026-04-29
+Next: B13 — Admin CRUD page
+Story file: docs/bmad/stories/epic-4/story-b13-admin-crud-page.md

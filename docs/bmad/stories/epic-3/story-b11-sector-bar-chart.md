@@ -1,7 +1,7 @@
 # Story B11 - Sector Bar Chart
 
 **Epic:** 3 - Dashboard  
-**Status:** Todo  
+**Status:** Done  
 **Dependencies:** B5, B8  
 
 ## Story
@@ -10,7 +10,7 @@ As a dashboard user, I want a sector breakdown for one country and year so that 
 
 ## Acceptance Criteria
 
-- Country selector controls sector data.
+- Sector data follows the selected dashboard country without a duplicate country selector.
 - Year selector controls sector data.
 - Null values show as no data.
 - Zero values remain visible as real zero.

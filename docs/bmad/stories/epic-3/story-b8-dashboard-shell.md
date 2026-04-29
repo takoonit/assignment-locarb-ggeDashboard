@@ -1,7 +1,7 @@
 # Story B8 - Dashboard Shell
 
 **Epic:** 3 - Dashboard  
-**Status:** Todo  
+**Status:** Done  
 **Dependencies:** B1, A7  
 
 ## Story

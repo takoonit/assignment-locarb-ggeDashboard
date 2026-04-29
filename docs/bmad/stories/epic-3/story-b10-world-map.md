@@ -1,7 +1,7 @@
 # Story B10 - World Map
 
 **Epic:** 3 - Dashboard  
-**Status:** Todo  
+**Status:** Done  
 **Dependencies:** B5, B8  
 
 ## Story
@@ -11,7 +11,7 @@ As a dashboard user, I want a world map colored by emissions for a selected year
 ## Acceptance Criteria
 
 - Year selector controls map data.
-- Gas selector controls map data and defaults to `TOTAL`.
+- Dashboard gas selector controls map data and defaults to `TOTAL`.
 - No-data countries use a distinct color.
 - Legend includes low, high, and no data.
 - Tooltips distinguish values from no data.
