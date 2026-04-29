@@ -1,39 +1,104 @@
 # GGE Dashboard
 
-Greenhouse Gas Emissions Dashboard & API — a full-stack take-home project demonstrating a production-grade Next.js app with real data, typed API, interactive visualizations, admin CRUD, and Vercel-ready deployment.
+A full-stack Greenhouse Gas Emissions dashboard and API built with Next.js, demonstrating production-grade architecture, typed APIs, interactive data visualisation, and admin management. Designed for real-world deployment on Vercel.
 
-## Stack
+---
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router) + TypeScript |
-| Database | PostgreSQL on [Neon](https://neon.tech/) + Prisma |
-| UI | MUI (Material Design 3-inspired) + Recharts + react-simple-maps |
-| Auth | NextAuth/Auth.js with GitHub OAuth |
-| Data fetching | TanStack Query |
-| Validation | Zod |
-| API docs | Scalar UI + OpenAPI 3.1 |
-| Package manager | bun |
-| Deployment | Vercel |
+## Overview
+
+This project showcases:
+- A public analytics dashboard with interactive charts and maps
+- A typed REST API with consistent response contracts
+- Admin CRUD capabilities with role-based access control
+- Clean data handling with explicit null semantics
+- End-to-end TypeScript safety and modern tooling
+
+---
+
+## Tech Stack
+
+| Layer            | Technology |
+|------------------|-----------|
+| Framework        | Next.js 16 (App Router) + TypeScript |
+| Database         | PostgreSQL (Neon) + Prisma |
+| UI               | MUI + Recharts + react-simple-maps |
+| Authentication   | Auth.js (NextAuth) with GitHub OAuth |
+| Data Fetching    | TanStack Query |
+| Validation       | Zod |
+| API Documentation| Scalar UI + OpenAPI 3.1 |
+| Package Manager  | Bun |
+| Deployment       | Vercel |
+
+---
 
 ## Features
 
-- **Public dashboard** — trend line, world map, and sector bar chart, scoped by country, gas, and year controls.
-- **Public REST API** — JSON endpoints for countries, trend data, map data, sector breakdowns, and selected emission values with consistent `{ data }` / `{ error }` envelopes.
-- **Interactive API docs** — Scalar UI at `/api/docs`, backed by a generated OpenAPI 3.1 document at `/api/openapi`.
-- **Admin CRUD** — role-gated `/admin` page for managing countries, annual emissions, and sector shares with server-side pagination.
-- **Honest null handling** — missing CSV values stay `null` everywhere; the UI and API never substitute `0`.
+### Public Dashboard
+- Emissions trend line visualisation
+- Interactive world map
+- Sector-based breakdown charts
+- Filters by country, gas type, and year range
 
-## Setup
+### Public API
+- RESTful endpoints with consistent response format:
+```json
+{ "data": ... }
+```
+or
+```json
+{ "error": { "code": "...", "details": ... } }
+```
+
+### API Documentation
+- Interactive docs: `/api/docs`
+- OpenAPI spec: `/api/openapi`
+
+### Admin Panel
+- Role-protected `/admin` dashboard
+- CRUD operations for:
+  - Countries
+  - Annual emissions
+  - Sector shares
+- Server-side pagination
+
+### Data Integrity
+- Missing CSV values are preserved as `null`
+- No silent substitution with `0`
+
+---
+
+## Documentation & BMAD Approach
+
+This project follows a structured documentation strategy inspired by **BMAD (Build–Measure–Adapt–Document)** principles.
+
+### Documentation Structure
+
+- **README.md** — high-level overview, setup, and usage
+- **API Docs** — OpenAPI 3.1 + Scalar UI for interactive exploration
+- **Design Docs (`design.md`)** — architecture decisions, data flow, and UI reasoning
+- **Schema & Data Contracts** — Prisma schema and Zod validation ensure consistency
+
+### BMAD in Practice
+
+- **Build** — Implement core dashboard and API with strict typing and modular design
+- **Measure** — Validate through type safety, runtime validation (Zod), and test suite
+- **Adapt** — Iterative improvements via tradeoffs and future roadmap
+- **Document** — Maintain clear, developer-friendly docs to support handover and scalability
+
+This ensures the project is not only functional but also maintainable, extensible, and easy for other developers to onboard.
+
+---
+
+## Getting Started
 
 ### Prerequisites
+- Bun 1.0+
+- PostgreSQL database (Neon, Supabase, or local)
+- (Optional) Doppler CLI
 
-- [Bun](https://bun.sh/) 1.0+
-- [Doppler CLI](https://docs.doppler.com/docs/install-cli) (secrets management — no `.env` files are committed)
-- Access to the Doppler project for this app (or supply env vars manually — see below)
-- A [Neon](https://neon.tech/) PostgreSQL database
+---
 
-### 1. Clone and install
+### Installation
 
 ```bash
 git clone <repo-url>
@@ -41,139 +106,111 @@ cd assignment-locarb-ggeDashboard
 bun install
 ```
 
-### 2. Environment variables
+---
 
-All secrets are managed in Doppler. Required variables:
+### Environment Setup
+
+Copy `.env.example` to `.env.local` and configure:
 
 | Variable | Description |
-|---|---|
-| `DATABASE_URL` | Neon PostgreSQL connection string (`sslmode=require`) |
-| `NEXTAUTH_SECRET` | ≥ 32 random characters — used by NextAuth/Auth.js |
-| `AUTH_GITHUB_ID` | GitHub OAuth App Client ID |
-| `AUTH_GITHUB_SECRET` | GitHub OAuth App Client Secret |
-| `NEXT_PUBLIC_APP_URL` | Public origin, e.g. `http://localhost:3000` |
+|----------|------------|
+| DATABASE_URL | PostgreSQL connection string |
+| NEXTAUTH_SECRET | ≥32 random characters |
+| AUTH_GITHUB_ID | GitHub OAuth Client ID |
+| AUTH_GITHUB_SECRET | GitHub OAuth Secret |
+| NEXT_PUBLIC_APP_URL | App base URL |
 
-**With Doppler (recommended):**
+---
 
-```bash
-doppler login      # one-time
-doppler setup      # link this directory to the Doppler project
-```
-
-**Without Doppler:** copy `.env.example` to `.env.local` and fill in real values.
-
-### 3. Migrate the database
+### Database Setup
 
 ```bash
-# With Doppler
-doppler run -- bun run db:migrate:deploy
-
-# Without Doppler (.env.local present)
 bun run db:migrate:deploy
-```
 
-### 4. Seed from CSV
-
-The seed script reads the assignment CSV and upserts all countries, annual emissions, and sector shares. Missing numeric values in the CSV become `null`.
-
-```bash
-# With Doppler
-SEED_CSV_PATH=/path/to/emissions.csv doppler run -- bun run db:seed
-
-# Without Doppler
 SEED_CSV_PATH=/path/to/emissions.csv bun run db:seed
 ```
 
-`SEED_CSV_PATH` must point to the provided assignment CSV file.
+---
 
-### 5. Start the dev server
+### Run Development Server
 
 ```bash
-# With Doppler
-bun run dev:doppler
-
-# Without Doppler
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Visit: http://localhost:3000
 
-## Available commands
+---
+
+## Scripts
 
 | Command | Description |
-|---|---|
-| `bun run dev` | Dev server (no Doppler) |
-| `bun run dev:doppler` | Dev server via Doppler |
-| `bun run build` | Production build |
-| `bun run start` | Serve production build |
-| `bun run test` | Run Vitest test suite |
-| `bun run typecheck` | TypeScript check (no emit) |
-| `bun run lint` | ESLint |
-| `bun run db:generate` | Regenerate Prisma client |
-| `bun run db:migrate:deploy` | Apply migrations to database |
-| `bun run db:seed` | Seed from CSV (`SEED_CSV_PATH` required) |
+|--------|------------|
+| bun run dev | Start development server |
+| bun run dev:doppler | Run with Doppler |
+| bun run build | Production build |
+| bun run test | Run tests |
+| bun run typecheck | Type checking |
+| bun run db:seed | Seed database |
 
-## API docs
+---
 
-Visit `/api/docs` for the interactive Scalar UI. The underlying OpenAPI 3.1 document is served at `/api/openapi`.
+## Authentication & Roles
 
-Public endpoints:
+### User Flow
+- Users sign in via GitHub OAuth
+- First login creates a `VIEWER` role user
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/countries` | List countries for filters and dropdowns |
-| `GET` | `/api/emissions/trend` | Country emissions trend by gas and year range |
-| `GET` | `/api/emissions/map` | World map emissions for one year and gas |
-| `GET` | `/api/emissions/sector` | Sector breakdown for one country and year |
-| `GET` | `/api/emissions/filter` | Single selected country/year/gas value |
-| `GET` | `/api/emissions/map/years` | Available years for the map view |
-| `GET` | `/api/emissions/sector/years` | Available sector years for a selected country |
-
-Admin endpoints (require GitHub sign-in with admin role):
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/admin/countries` | Paginated admin country list |
-| `GET` | `/api/admin/emissions` | Paginated admin annual emission list |
-| `GET` | `/api/admin/sector-shares` | Paginated admin sector-share list |
-| `POST` | `/api/countries` | Create country |
-| `PATCH/DELETE` | `/api/countries/:id` | Update or delete country |
-| `POST` | `/api/emissions` | Create annual emission record |
-| `PATCH/DELETE` | `/api/emissions/:id` | Update or delete annual emission record |
-| `POST` | `/api/sector-shares` | Create sector-share record |
-| `PATCH/DELETE` | `/api/sector-shares/:id` | Update or delete sector-share record |
-
-All responses use:
-
-```json
-{ "data": ... }
-// or
-{ "error": { "code": "...", "details": ... } }
-```
-
-## Admin access
-
-1. Sign in at `/api/auth/signin` with a GitHub account.
-2. Promote the user to admin by running this SQL against your database:
+### Promote to Admin
 
 ```sql
-UPDATE "User" SET role = 'ADMIN' WHERE email = 'your@email.com';
+UPDATE "User"
+SET role = 'ADMIN'
+WHERE email = 'your@email.com';
 ```
 
-Then sign out and back in. The `/admin` route becomes accessible.
+Then re-login to access `/admin`.
 
-## Tradeoffs and next steps
+---
 
-**Tradeoffs made:**
+## Architecture Decisions
 
-- **Single Next.js app** — API routes and UI live together to minimize deployment surface. The tradeoff is that the API and UI scale together rather than independently.
-- **Direct Neon connection** — using `pg` Pool with a direct connection string rather than Neon's pooled proxy. Simpler for a single-region deployment; would need the pooler for many concurrent serverless invocations.
-- **MUI over Tailwind** — MUI gives consistent accessible components quickly; Tailwind gives more pixel-level control. For a data dashboard with many table and form primitives, MUI was faster.
-- **Seed via upsert, not truncate** — re-running the seed is idempotent and safe on a live database; the tradeoff is slightly more complex SQL.
+### Tradeoffs
 
-**Next steps:**
+- **Single Next.js app**
+  - Simplifies deployment
+  - Limits independent scaling of API/UI
 
-- Add OAuth role promotion UI instead of raw SQL.
-- Add export (CSV/JSON) from the admin table.
-- Deploy to Vercel and run smoke tests (story B16).
-- Add row-level change history / audit log.
+- **Direct DB connection**
+  - Simpler setup
+  - Less optimal for high serverless concurrency
+
+- **MUI over Tailwind**
+  - Faster for structured UI
+  - Less granular styling control
+
+- **Idempotent seeding**
+  - Safe for re-runs
+  - Slightly more complex logic
+
+---
+
+## Future Improvements
+
+- Admin UI for role management
+- Data export (CSV/JSON)
+- Audit logs for changes
+- Multi-region database optimisation
+- Load testing and performance tuning
+
+---
+
+## Deployment
+
+Deploy directly to Vercel with environment variables configured.
+
+---
+
+## License
+
+This project is for demonstration purposes.
