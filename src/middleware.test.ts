@@ -6,7 +6,7 @@ vi.mock("next-auth/middleware", () => ({
   withAuth: (middlewareOrOptions: any, maybeOptions: any) => {
     let options = maybeOptions;
     let middleware = typeof middlewareOrOptions === "function" ? middlewareOrOptions : undefined;
-    
+
     if (!middleware) {
       options = middlewareOrOptions;
     }
@@ -25,7 +25,7 @@ vi.mock("next-auth/middleware", () => ({
 describe("middleware", () => {
   it("redirects to signin if authenticated but not admin", async () => {
     const { default: middleware } = await import("./middleware");
-    
+
     const req = {
       url: "http://localhost/admin",
       nextauth: {
@@ -35,13 +35,13 @@ describe("middleware", () => {
     } as any;
 
     const res = middleware(req);
-    
+
     expect(res.headers.get("location")).toContain("/api/auth/signin");
   });
 
   it("does not redirect if authenticated as admin", async () => {
     const { default: middleware } = await import("./middleware");
-    
+
     const req = {
       url: "http://localhost/admin",
       nextauth: {
@@ -51,13 +51,13 @@ describe("middleware", () => {
     } as any;
 
     const res = middleware(req);
-    
+
     expect(res).toBeUndefined();
   });
 
   it("redirects to signin if not authenticated", async () => {
     const { default: middleware } = await import("./middleware");
-    
+
     const req = {
       url: "http://localhost/admin",
       nextauth: {
@@ -67,7 +67,7 @@ describe("middleware", () => {
     } as any;
 
     const res = middleware(req);
-    
+
     expect(res.headers.get("location")).toContain("/api/auth/signin");
   });
 });

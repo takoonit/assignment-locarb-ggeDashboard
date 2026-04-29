@@ -92,6 +92,14 @@ function mockFetch() {
       });
     }
 
+    if (url.pathname === "/api/emissions/map/years") {
+      return Response.json({ data: [2022, 2020, 2019] });
+    }
+
+    if (url.pathname === "/api/emissions/sector/years") {
+      return Response.json({ data: [2022, 2020, 2019] });
+    }
+
     return Response.json({ error: { code: "NOT_FOUND", details: {} } }, { status: 404 });
   });
 
