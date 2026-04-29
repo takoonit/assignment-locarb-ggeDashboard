@@ -1,9 +1,14 @@
 "use client";
 
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
-import { Box, Stack, Typography } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+import LoginIcon from "@mui/icons-material/Login";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import { Box, Stack, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { ChartCard, ChartEmpty, ChartError, ChartSkeleton } from "@/components/dashboard/chart-card";
 import { CountrySelect, GasControl, YearSelect } from "@/components/dashboard/controls";
 import { SectorChart } from "@/components/dashboard/sector-chart";
@@ -245,6 +250,8 @@ export function DashboardPage() {
 }
 
 function Header() {
+  const { data: session } = useSession();
+
   return (
     <Box
       component="header"
@@ -301,6 +308,69 @@ function Header() {
             Analytical overview · scoped filters · data integrity indicators
           </Typography>
         </Box>
+      </Stack>
+
+      <Stack direction="row" spacing={cohereTokens.spacing.sm} sx={{ alignItems: "center" }}>
+        {session?.user.role === "ADMIN" && (
+          <Tooltip title="Admin Dashboard">
+            <Button
+              component={Link}
+              href="/admin"
+              size="small"
+              startIcon={<AdminPanelSettingsIcon />}
+              sx={{
+                color: cohereTokens.colors.forestGreen,
+                display: { xs: "none", sm: "flex" },
+                fontWeight: 600,
+              }}
+            >
+              Admin
+            </Button>
+          </Tooltip>
+        )}
+
+        {session ? (
+          <Button
+            component={Link}
+            href="/auth/signout"
+            size="small"
+            startIcon={<LogoutIcon />}
+            variant="outlined"
+            sx={{
+              borderColor: cohereTokens.colors.borderLight,
+              borderRadius: cohereTokens.rounded.pill,
+              color: cohereTokens.colors.bodyMuted,
+              fontSize: 13,
+              fontWeight: 600,
+              "&:hover": {
+                bgcolor: cohereTokens.colors.softEarth,
+                borderColor: cohereTokens.colors.hairline,
+              },
+            }}
+          >
+            Log out
+          </Button>
+        ) : (
+          <Button
+            component={Link}
+            href="/auth/signin"
+            size="small"
+            startIcon={<LoginIcon />}
+            variant="contained"
+            sx={{
+              bgcolor: cohereTokens.colors.carbonBlack,
+              borderRadius: cohereTokens.rounded.pill,
+              color: cohereTokens.colors.onPrimary,
+              fontSize: 13,
+              fontWeight: 600,
+              "&:hover": {
+                bgcolor: cohereTokens.colors.primary,
+              },
+            }}
+          >
+            Log in
+          </Button>
+        )}
       </Stack>
     </Box>
   );

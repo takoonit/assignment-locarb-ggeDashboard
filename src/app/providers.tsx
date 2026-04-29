@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { theme } from "@/theme";
@@ -33,8 +34,10 @@ export function Providers({ children }: ProvidersProps) {
       <ThemeProvider theme={theme}>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <QueryClientProvider client={queryClient}>
-            <CssBaseline />
-            {children}
+            <SessionProvider>
+              <CssBaseline />
+              {children}
+            </SessionProvider>
           </QueryClientProvider>
         </LocalizationProvider>
       </ThemeProvider>
