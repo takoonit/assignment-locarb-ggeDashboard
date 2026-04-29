@@ -132,6 +132,11 @@ export const updateSectorShareBodySchema = z.object({
   other: nullableNumber.optional(),
 });
 
+export const AdminPageQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 // camelCase aliases used by openapi.ts
 export const countryCodeSchema = CountryCodeSchema;
 export const gasSchema = GasSchema;

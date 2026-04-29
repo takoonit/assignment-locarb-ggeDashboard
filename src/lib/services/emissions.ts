@@ -33,6 +33,26 @@ export async function listAdminCountries() {
   });
 }
 
+export async function listAdminCountriesPaged({
+  page,
+  pageSize,
+}: {
+  page: number;
+  pageSize: number;
+}) {
+  const [rows, total] = await Promise.all([
+    db.country.findMany({
+      select: { id: true, code: true, name: true, isRegion: true },
+      orderBy: [{ name: "asc" }, { code: "asc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.country.count(),
+  ]);
+
+  return { data: rows, total, page, pageSize };
+}
+
 export async function createCountry(body: { code: string; name: string; isRegion?: boolean }) {
   try {
     return await db.country.create({
@@ -408,6 +428,26 @@ export async function listAdminAnnualEmissions() {
   return rows.map(formatAnnualEmission);
 }
 
+export async function listAdminAnnualEmissionsPaged({
+  page,
+  pageSize,
+}: {
+  page: number;
+  pageSize: number;
+}) {
+  const [rows, total] = await Promise.all([
+    db.annualEmission.findMany({
+      select: annualEmissionSelect,
+      orderBy: [{ country: { code: "asc" } }, { year: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.annualEmission.count(),
+  ]);
+
+  return { data: rows.map(formatAnnualEmission), total, page, pageSize };
+}
+
 // ─── Write: Sector Shares ─────────────────────────────────────────────────────
 
 const sectorShareSelect = {
@@ -526,6 +566,26 @@ export async function listAdminSectorShares() {
   });
 
   return rows.map(formatSectorShare);
+}
+
+export async function listAdminSectorSharesPaged({
+  page,
+  pageSize,
+}: {
+  page: number;
+  pageSize: number;
+}) {
+  const [rows, total] = await Promise.all([
+    db.sectorShare.findMany({
+      select: sectorShareSelect,
+      orderBy: [{ country: { code: "asc" } }, { year: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.sectorShare.count(),
+  ]);
+
+  return { data: rows.map(formatSectorShare), total, page, pageSize };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

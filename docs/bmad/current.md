@@ -1,6 +1,8 @@
 # Active Story
 
-Status: none
-Last completed: B13 — Admin CRUD page on 2026-04-29
-Next: B15 — README
-Story file: docs/bmad/stories/epic-4/story-b15-readme.md
+Story: B20 — Admin Table Pagination
+Branch: feature/b20-pagination
+Epic: 5 — Advanced Features
+Story file: docs/bmad/stories/epic-5/story-b20-pagination.md
+Started: 2026-04-29
+Status: in-progress

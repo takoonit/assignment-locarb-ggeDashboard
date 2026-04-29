@@ -8,6 +8,7 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -21,7 +22,9 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
+  TablePagination,
   TableRow,
   Tabs,
   TextField,
@@ -29,8 +32,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { adminMutation, AdminApiError } from "@/lib/admin-api-client";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { adminFetch, adminMutation, AdminApiError, type PagedResult } from "@/lib/admin-api-client";
 import type {
   AdminCountryRow,
   AdminEmissionRow,
@@ -38,11 +42,7 @@ import type {
 } from "@/lib/admin-types";
 import { cohereTokens } from "@/theme";
 
-type AdminPageClientProps = {
-  countries: AdminCountryRow[];
-  emissions: AdminEmissionRow[];
-  sectorShares: AdminSectorShareRow[];
-};
+const PAGE_SIZE = 20;
 
 type TabKey = "countries" | "emissions" | "sectorShares";
 type DialogMode = "create" | "edit";
@@ -61,16 +61,21 @@ type CountryForm = { code: string; name: string; isRegion: boolean };
 type EmissionForm = Record<"countryCode" | "year" | EmissionField, string>;
 type SectorForm = Record<"countryCode" | "year" | SectorField, string>;
 
-export function AdminPageClient({
-  countries,
-  emissions,
-  sectorShares,
-}: AdminPageClientProps) {
+export function AdminPageClient() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const tab = (searchParams.get("tab") as TabKey | null) ?? "countries";
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
+
+  const [countryPage, setCountryPage] = useState<PagedResult<AdminCountryRow> | null>(null);
+  const [emissionPage, setEmissionPage] = useState<PagedResult<AdminEmissionRow> | null>(null);
+  const [sectorPage, setSectorPage] = useState<PagedResult<AdminSectorShareRow> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabKey>("countries");
-  const [countryRows, setCountryRows] = useState(countries);
-  const [emissionRows, setEmissionRows] = useState(emissions);
-  const [sectorRows, setSectorRows] = useState(sectorShares);
   const [countryDialog, setCountryDialog] = useState<null | {
     mode: DialogMode;
     row?: AdminCountryRow;
@@ -87,27 +92,78 @@ export function AdminPageClient({
     values: SectorForm;
   }>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const currentRows = useMemo(
-    () => ({
-      countries: countryRows.length,
-      emissions: emissionRows.length,
-      sectorShares: sectorRows.length,
-    }),
-    [countryRows.length, emissionRows.length, sectorRows.length],
+  const setParam = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(key, value);
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [pathname, router, searchParams],
   );
+
+  const handleTabChange = useCallback(
+    (_: unknown, value: TabKey) => {
+      const params = new URLSearchParams();
+      params.set("tab", value);
+      params.set("page", "1");
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [pathname, router],
+  );
+
+  const handlePageChange = useCallback(
+    (_: unknown, newPage: number) => {
+      setParam("page", String(newPage + 1));
+    },
+    [setParam],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFetchError(null);
+
+    const qs = `?page=${page}&pageSize=${PAGE_SIZE}`;
+
+    const fetcher =
+      tab === "countries"
+        ? adminFetch<PagedResult<AdminCountryRow>>(`/api/admin/countries${qs}`)
+        : tab === "emissions"
+          ? adminFetch<PagedResult<AdminEmissionRow>>(`/api/admin/emissions${qs}`)
+          : adminFetch<PagedResult<AdminSectorShareRow>>(`/api/admin/sector-shares${qs}`);
+
+    fetcher
+      .then((result) => {
+        if (cancelled) return;
+        if (tab === "countries") setCountryPage(result as PagedResult<AdminCountryRow>);
+        else if (tab === "emissions") setEmissionPage(result as PagedResult<AdminEmissionRow>);
+        else setSectorPage(result as PagedResult<AdminSectorShareRow>);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setFetchError(err instanceof AdminApiError ? err.code : "INTERNAL_ERROR");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, page]);
 
   async function runMutation<T>(operation: () => Promise<T>) {
     setSaving(true);
-    setError(null);
+    setMutationError(null);
     try {
       const result = await operation();
       await invalidateDashboardQueries();
       return result;
-    } catch (mutationError) {
-      setError(mutationError instanceof AdminApiError ? mutationError.code : "INTERNAL_ERROR");
+    } catch (err) {
+      setMutationError(err instanceof AdminApiError ? err.code : "INTERNAL_ERROR");
       return null;
     } finally {
       setSaving(false);
@@ -121,6 +177,20 @@ export function AdminPageClient({
     ]);
   }
 
+  async function refreshCurrentTab() {
+    const qs = `?page=${page}&pageSize=${PAGE_SIZE}`;
+    if (tab === "countries") {
+      const result = await adminFetch<PagedResult<AdminCountryRow>>(`/api/admin/countries${qs}`);
+      setCountryPage(result);
+    } else if (tab === "emissions") {
+      const result = await adminFetch<PagedResult<AdminEmissionRow>>(`/api/admin/emissions${qs}`);
+      setEmissionPage(result);
+    } else {
+      const result = await adminFetch<PagedResult<AdminSectorShareRow>>(`/api/admin/sector-shares${qs}`);
+      setSectorPage(result);
+    }
+  }
+
   async function saveCountry() {
     if (!countryDialog) return;
     const body = {
@@ -129,7 +199,7 @@ export function AdminPageClient({
       isRegion: countryDialog.values.isRegion,
     };
     if (!body.code || !body.name) {
-      setError("INVALID_PARAMS");
+      setMutationError("INVALID_PARAMS");
       return;
     }
 
@@ -142,20 +212,15 @@ export function AdminPageClient({
           }),
     );
     if (!saved) return;
-
-    setCountryRows((rows) =>
-      countryDialog.mode === "create"
-        ? sortCountries([...rows, saved])
-        : sortCountries(rows.map((row) => (row.id === saved.id ? saved : row))),
-    );
     setCountryDialog(null);
+    await refreshCurrentTab();
   }
 
   async function saveEmission() {
     if (!emissionDialog) return;
     const body = emissionBody(emissionDialog.values);
     if (!body.countryCode || Number.isNaN(body.year)) {
-      setError("INVALID_PARAMS");
+      setMutationError("INVALID_PARAMS");
       return;
     }
 
@@ -168,20 +233,15 @@ export function AdminPageClient({
           }),
     );
     if (!saved) return;
-
-    setEmissionRows((rows) =>
-      emissionDialog.mode === "create"
-        ? sortEmissions([...rows, saved])
-        : sortEmissions(rows.map((row) => (row.id === saved.id ? saved : row))),
-    );
     setEmissionDialog(null);
+    await refreshCurrentTab();
   }
 
   async function saveSectorShare() {
     if (!sectorDialog) return;
     const body = sectorBody(sectorDialog.values);
     if (!body.countryCode || Number.isNaN(body.year)) {
-      setError("INVALID_PARAMS");
+      setMutationError("INVALID_PARAMS");
       return;
     }
 
@@ -194,13 +254,8 @@ export function AdminPageClient({
           }),
     );
     if (!saved) return;
-
-    setSectorRows((rows) =>
-      sectorDialog.mode === "create"
-        ? sortSectorShares([...rows, saved])
-        : sortSectorShares(rows.map((row) => (row.id === saved.id ? saved : row))),
-    );
     setSectorDialog(null);
+    await refreshCurrentTab();
   }
 
   async function confirmDelete() {
@@ -225,16 +280,20 @@ export function AdminPageClient({
       );
     });
     if (!deleted) return;
-
-    if (deleteTarget.type === "country") {
-      setCountryRows((rows) => rows.filter((row) => row.id !== deleted.id));
-    } else if (deleteTarget.type === "emission") {
-      setEmissionRows((rows) => rows.filter((row) => row.id !== deleted.id));
-    } else {
-      setSectorRows((rows) => rows.filter((row) => row.id !== deleted.id));
-    }
     setDeleteTarget(null);
+    await refreshCurrentTab();
   }
+
+  const countryRows = countryPage?.data ?? [];
+  const emissionRows = emissionPage?.data ?? [];
+  const sectorRows = sectorPage?.data ?? [];
+
+  const currentTotal =
+    tab === "countries"
+      ? countryPage?.total
+      : tab === "emissions"
+        ? emissionPage?.total
+        : sectorPage?.total;
 
   return (
     <Box component="main" sx={{ bgcolor: cohereTokens.colors.canvas, minHeight: "100vh" }}>
@@ -257,18 +316,20 @@ export function AdminPageClient({
               Protected CRUD for countries, annual emissions, and sector shares.
             </Typography>
           </Box>
-          <Typography color="text.secondary" variant="body2">
-            {currentRows.countries} countries · {currentRows.emissions} annual records ·{" "}
-            {currentRows.sectorShares} sector records
-          </Typography>
+          {currentTotal !== undefined ? (
+            <Typography color="text.secondary" variant="body2">
+              {currentTotal} records
+            </Typography>
+          ) : null}
         </Stack>
 
-        {error ? <Alert severity="error">Mutation failed: {error}</Alert> : null}
+        {fetchError ? <Alert severity="error">Failed to load data: {fetchError}</Alert> : null}
+        {mutationError ? <Alert severity="error">Mutation failed: {mutationError}</Alert> : null}
 
         <Paper variant="outlined" sx={{ borderColor: cohereTokens.colors.cardBorder, overflow: "hidden" }}>
           <Tabs
             aria-label="Admin CRUD sections"
-            onChange={(_event, value: TabKey) => setTab(value)}
+            onChange={handleTabChange}
             value={tab}
             variant="scrollable"
           >
@@ -276,31 +337,51 @@ export function AdminPageClient({
             <Tab label="Annual emissions" value="emissions" />
             <Tab label="Sector shares" value="sectorShares" />
           </Tabs>
-          <Box sx={{ p: { xs: 1.5, md: 2 } }}>
-            {tab === "countries" ? (
-              <CountriesPanel
-                rows={countryRows}
-                onCreate={() => setCountryDialog({ mode: "create", values: emptyCountryForm() })}
-                onDelete={(row) => setDeleteTarget({ type: "country", row })}
-                onEdit={(row) => setCountryDialog({ mode: "edit", row, values: countryForm(row) })}
-              />
-            ) : null}
-            {tab === "emissions" ? (
-              <EmissionsPanel
-                rows={emissionRows}
-                onCreate={() => setEmissionDialog({ mode: "create", values: emptyEmissionForm() })}
-                onDelete={(row) => setDeleteTarget({ type: "emission", row })}
-                onEdit={(row) => setEmissionDialog({ mode: "edit", row, values: emissionForm(row) })}
-              />
-            ) : null}
-            {tab === "sectorShares" ? (
-              <SectorSharesPanel
-                rows={sectorRows}
-                onCreate={() => setSectorDialog({ mode: "create", values: emptySectorForm() })}
-                onDelete={(row) => setDeleteTarget({ type: "sectorShare", row })}
-                onEdit={(row) => setSectorDialog({ mode: "edit", row, values: sectorForm(row) })}
-              />
-            ) : null}
+          <Box sx={{ p: { xs: 1.5, md: 2 }, position: "relative", minHeight: 120 }}>
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                <CircularProgress size={32} />
+              </Box>
+            ) : (
+              <>
+                {tab === "countries" ? (
+                  <CountriesPanel
+                    page={page - 1}
+                    pageSize={PAGE_SIZE}
+                    rows={countryRows}
+                    total={countryPage?.total ?? 0}
+                    onCreate={() => setCountryDialog({ mode: "create", values: emptyCountryForm() })}
+                    onDelete={(row) => setDeleteTarget({ type: "country", row })}
+                    onEdit={(row) => setCountryDialog({ mode: "edit", row, values: countryForm(row) })}
+                    onPageChange={handlePageChange}
+                  />
+                ) : null}
+                {tab === "emissions" ? (
+                  <EmissionsPanel
+                    page={page - 1}
+                    pageSize={PAGE_SIZE}
+                    rows={emissionRows}
+                    total={emissionPage?.total ?? 0}
+                    onCreate={() => setEmissionDialog({ mode: "create", values: emptyEmissionForm() })}
+                    onDelete={(row) => setDeleteTarget({ type: "emission", row })}
+                    onEdit={(row) => setEmissionDialog({ mode: "edit", row, values: emissionForm(row) })}
+                    onPageChange={handlePageChange}
+                  />
+                ) : null}
+                {tab === "sectorShares" ? (
+                  <SectorSharesPanel
+                    page={page - 1}
+                    pageSize={PAGE_SIZE}
+                    rows={sectorRows}
+                    total={sectorPage?.total ?? 0}
+                    onCreate={() => setSectorDialog({ mode: "create", values: emptySectorForm() })}
+                    onDelete={(row) => setDeleteTarget({ type: "sectorShare", row })}
+                    onEdit={(row) => setSectorDialog({ mode: "edit", row, values: sectorForm(row) })}
+                    onPageChange={handlePageChange}
+                  />
+                ) : null}
+              </>
+            )}
           </Box>
         </Paper>
       </Stack>
@@ -337,15 +418,23 @@ export function AdminPageClient({
 }
 
 function CountriesPanel({
-  rows,
+  onPageChange,
   onCreate,
   onDelete,
   onEdit,
+  page,
+  pageSize,
+  rows,
+  total,
 }: {
-  rows: AdminCountryRow[];
+  onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void;
   onCreate: () => void;
   onDelete: (row: AdminCountryRow) => void;
   onEdit: (row: AdminCountryRow) => void;
+  page: number;
+  pageSize: number;
+  rows: AdminCountryRow[];
+  total: number;
 }) {
   return (
     <Stack spacing={2}>
@@ -377,6 +466,17 @@ function CountriesPanel({
               </TableRow>
             ))}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TablePagination
+                count={total}
+                onPageChange={onPageChange}
+                page={page}
+                rowsPerPage={pageSize}
+                rowsPerPageOptions={[pageSize]}
+              />
+            </TableRow>
+          </TableFooter>
         </Table>
       </TableContainer>
     </Stack>
@@ -384,15 +484,23 @@ function CountriesPanel({
 }
 
 function EmissionsPanel({
-  rows,
+  onPageChange,
   onCreate,
   onDelete,
   onEdit,
+  page,
+  pageSize,
+  rows,
+  total,
 }: {
-  rows: AdminEmissionRow[];
+  onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void;
   onCreate: () => void;
   onDelete: (row: AdminEmissionRow) => void;
   onEdit: (row: AdminEmissionRow) => void;
+  page: number;
+  pageSize: number;
+  rows: AdminEmissionRow[];
+  total: number;
 }) {
   return (
     <Stack spacing={2}>
@@ -428,6 +536,18 @@ function EmissionsPanel({
               </TableRow>
             ))}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TablePagination
+                count={total}
+                colSpan={emissionFields.length + 3}
+                onPageChange={onPageChange}
+                page={page}
+                rowsPerPage={pageSize}
+                rowsPerPageOptions={[pageSize]}
+              />
+            </TableRow>
+          </TableFooter>
         </Table>
       </TableContainer>
     </Stack>
@@ -435,15 +555,23 @@ function EmissionsPanel({
 }
 
 function SectorSharesPanel({
-  rows,
+  onPageChange,
   onCreate,
   onDelete,
   onEdit,
+  page,
+  pageSize,
+  rows,
+  total,
 }: {
-  rows: AdminSectorShareRow[];
+  onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void;
   onCreate: () => void;
   onDelete: (row: AdminSectorShareRow) => void;
   onEdit: (row: AdminSectorShareRow) => void;
+  page: number;
+  pageSize: number;
+  rows: AdminSectorShareRow[];
+  total: number;
 }) {
   return (
     <Stack spacing={2}>
@@ -479,6 +607,18 @@ function SectorSharesPanel({
               </TableRow>
             ))}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TablePagination
+                count={total}
+                colSpan={sectorFields.length + 3}
+                onPageChange={onPageChange}
+                page={page}
+                rowsPerPage={pageSize}
+                rowsPerPageOptions={[pageSize]}
+              />
+            </TableRow>
+          </TableFooter>
         </Table>
       </TableContainer>
     </Stack>
@@ -849,18 +989,6 @@ function stripCountryCode<T extends { countryCode: string }>(body: T): Omit<T, "
   const { countryCode, ...rest } = body;
   void countryCode;
   return rest;
-}
-
-function sortCountries(rows: AdminCountryRow[]) {
-  return [...rows].sort((a, b) => a.name.localeCompare(b.name) || a.code.localeCompare(b.code));
-}
-
-function sortEmissions(rows: AdminEmissionRow[]) {
-  return [...rows].sort((a, b) => a.countryCode.localeCompare(b.countryCode) || b.year - a.year);
-}
-
-function sortSectorShares(rows: AdminSectorShareRow[]) {
-  return [...rows].sort((a, b) => a.countryCode.localeCompare(b.countryCode) || b.year - a.year);
 }
 
 function titleCase(value: string) {
