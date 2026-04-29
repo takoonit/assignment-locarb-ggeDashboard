@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import path from "node:path";
 import { Pool } from "pg";
 import type { AnnualEmissionSeed, SectorShareSeed } from "./seed-transform";
 import { transformSeedCsv } from "./seed-transform";

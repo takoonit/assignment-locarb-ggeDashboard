@@ -161,7 +161,7 @@ export function transformSeedCsv(csv: string): SeedTransformResult {
 
   const yearColumns = header
     .map((name, index) => ({ index, name, year: parseYearColumn(name) }))
-    .filter((entry): entry is { index: number; year: number } => {
+    .filter((entry): entry is { index: number; name: string; year: number } => {
       const trimmedName = entry.name.trim();
       if (metadataColumns.has(trimmedName)) {
         return false;

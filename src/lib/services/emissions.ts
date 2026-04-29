@@ -185,6 +185,43 @@ export async function getSectorBreakdown({
   };
 }
 
+// ─── Read: Available Years ────────────────────────────────────────────────────
+
+export async function getAvailableMapYears() {
+  const rows = await db.annualEmission.findMany({
+    where: { total: { not: null } },
+    select: { year: true },
+    distinct: ["year"],
+    orderBy: { year: "desc" },
+  });
+  return rows.map((r: { year: number }) => r.year);
+}
+
+export async function getAvailableSectorYears(countryCode: string) {
+  const country = await db.country.findUnique({
+    where: { code: countryCode },
+    select: { id: true },
+  });
+  if (!country) return [];
+
+  const rows = await db.sectorShare.findMany({
+    where: {
+      countryId: country.id,
+      OR: [
+        { transport: { not: null } },
+        { manufacturing: { not: null } },
+        { electricity: { not: null } },
+        { buildings: { not: null } },
+        { other: { not: null } },
+      ],
+    },
+    select: { year: true },
+    distinct: ["year"],
+    orderBy: { year: "desc" },
+  });
+  return rows.map((r: { year: number }) => r.year);
+}
+
 // ─── Read: Filter ─────────────────────────────────────────────────────────────
 
 export async function getFilteredEmission({
