@@ -31,8 +31,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { adminFetch, adminMutation, AdminApiError, type PagedResult } from "@/lib/admin-api-client";
 import type {
@@ -69,13 +69,29 @@ export function AdminPageClient() {
   const tab = (searchParams.get("tab") as TabKey | null) ?? "countries";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
 
-  const [countryPage, setCountryPage] = useState<PagedResult<AdminCountryRow> | null>(null);
-  const [emissionPage, setEmissionPage] = useState<PagedResult<AdminEmissionRow> | null>(null);
-  const [sectorPage, setSectorPage] = useState<PagedResult<AdminSectorShareRow> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
   const queryClient = useQueryClient();
+
+  const countriesQuery = useQuery({
+    queryKey: ["admin", "countries", page],
+    queryFn: () => adminFetch<PagedResult<AdminCountryRow>>(`/api/admin/countries?page=${page}&pageSize=${PAGE_SIZE}`),
+    enabled: tab === "countries",
+  });
+
+  const emissionsQuery = useQuery({
+    queryKey: ["admin", "emissions", page],
+    queryFn: () => adminFetch<PagedResult<AdminEmissionRow>>(`/api/admin/emissions?page=${page}&pageSize=${PAGE_SIZE}`),
+    enabled: tab === "emissions",
+  });
+
+  const sectorQuery = useQuery({
+    queryKey: ["admin", "sectorShares", page],
+    queryFn: () => adminFetch<PagedResult<AdminSectorShareRow>>(`/api/admin/sector-shares?page=${page}&pageSize=${PAGE_SIZE}`),
+    enabled: tab === "sectorShares",
+  });
+
+  const loading = countriesQuery.isLoading || emissionsQuery.isLoading || sectorQuery.isLoading;
+  const fetchError = (countriesQuery.error ?? emissionsQuery.error ?? sectorQuery.error) as AdminApiError | null;
+
   const [countryDialog, setCountryDialog] = useState<null | {
     mode: DialogMode;
     row?: AdminCountryRow;
@@ -121,46 +137,12 @@ export function AdminPageClient() {
     [setParam],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setFetchError(null);
-
-    const qs = `?page=${page}&pageSize=${PAGE_SIZE}`;
-
-    const fetcher =
-      tab === "countries"
-        ? adminFetch<PagedResult<AdminCountryRow>>(`/api/admin/countries${qs}`)
-        : tab === "emissions"
-          ? adminFetch<PagedResult<AdminEmissionRow>>(`/api/admin/emissions${qs}`)
-          : adminFetch<PagedResult<AdminSectorShareRow>>(`/api/admin/sector-shares${qs}`);
-
-    fetcher
-      .then((result) => {
-        if (cancelled) return;
-        if (tab === "countries") setCountryPage(result as PagedResult<AdminCountryRow>);
-        else if (tab === "emissions") setEmissionPage(result as PagedResult<AdminEmissionRow>);
-        else setSectorPage(result as PagedResult<AdminSectorShareRow>);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setFetchError(err instanceof AdminApiError ? err.code : "INTERNAL_ERROR");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, page]);
-
   async function runMutation<T>(operation: () => Promise<T>) {
     setSaving(true);
     setMutationError(null);
     try {
       const result = await operation();
-      await invalidateDashboardQueries();
+      await invalidateQueries();
       return result;
     } catch (err) {
       setMutationError(err instanceof AdminApiError ? err.code : "INTERNAL_ERROR");
@@ -170,25 +152,12 @@ export function AdminPageClient() {
     }
   }
 
-  async function invalidateDashboardQueries() {
+  async function invalidateQueries() {
     await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["admin"] }),
       queryClient.invalidateQueries({ queryKey: ["countries"] }),
       queryClient.invalidateQueries({ queryKey: ["emissions"] }),
     ]);
-  }
-
-  async function refreshCurrentTab() {
-    const qs = `?page=${page}&pageSize=${PAGE_SIZE}`;
-    if (tab === "countries") {
-      const result = await adminFetch<PagedResult<AdminCountryRow>>(`/api/admin/countries${qs}`);
-      setCountryPage(result);
-    } else if (tab === "emissions") {
-      const result = await adminFetch<PagedResult<AdminEmissionRow>>(`/api/admin/emissions${qs}`);
-      setEmissionPage(result);
-    } else {
-      const result = await adminFetch<PagedResult<AdminSectorShareRow>>(`/api/admin/sector-shares${qs}`);
-      setSectorPage(result);
-    }
   }
 
   async function saveCountry() {
@@ -213,7 +182,6 @@ export function AdminPageClient() {
     );
     if (!saved) return;
     setCountryDialog(null);
-    await refreshCurrentTab();
   }
 
   async function saveEmission() {
@@ -234,7 +202,6 @@ export function AdminPageClient() {
     );
     if (!saved) return;
     setEmissionDialog(null);
-    await refreshCurrentTab();
   }
 
   async function saveSectorShare() {
@@ -255,7 +222,6 @@ export function AdminPageClient() {
     );
     if (!saved) return;
     setSectorDialog(null);
-    await refreshCurrentTab();
   }
 
   async function confirmDelete() {
@@ -281,23 +247,22 @@ export function AdminPageClient() {
     });
     if (!deleted) return;
     setDeleteTarget(null);
-    await refreshCurrentTab();
   }
 
-  const countryRows = countryPage?.data ?? [];
-  const emissionRows = emissionPage?.data ?? [];
-  const sectorRows = sectorPage?.data ?? [];
+  const countryRows = countriesQuery.data?.data ?? [];
+  const emissionRows = emissionsQuery.data?.data ?? [];
+  const sectorRows = sectorQuery.data?.data ?? [];
 
   const currentTotal =
     tab === "countries"
-      ? countryPage?.total
+      ? countriesQuery.data?.total
       : tab === "emissions"
-        ? emissionPage?.total
-        : sectorPage?.total;
+        ? emissionsQuery.data?.total
+        : sectorQuery.data?.total;
 
   return (
     <Box component="main" sx={{ bgcolor: cohereTokens.colors.canvas, flex: 1, display: "flex", flexDirection: "column" }}>
-      <Stack spacing={3} sx={{ maxWidth: 1440, mx: "auto", px: { xs: 2, md: 3 }, py: 3, width: "100%" }}>
+      <Stack spacing={3} sx={{ maxWidth: 1600, mx: "auto", px: { xs: 2, sm: 3 }, py: { xs: 3, md: 4 }, width: "100%" }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
@@ -337,7 +302,7 @@ export function AdminPageClient() {
             <Tab label="Annual emissions" value="emissions" />
             <Tab label="Sector shares" value="sectorShares" />
           </Tabs>
-          <Box sx={{ p: { xs: 1.5, md: 2 }, position: "relative", minHeight: 120 }}>
+          <Box sx={{ p: { xs: 1.5, md: 3 }, position: "relative", minHeight: 120 }}>
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                 <CircularProgress size={32} />
@@ -349,7 +314,7 @@ export function AdminPageClient() {
                     page={page - 1}
                     pageSize={PAGE_SIZE}
                     rows={countryRows}
-                    total={countryPage?.total ?? 0}
+                    total={countriesQuery.data?.total ?? 0}
                     onCreate={() => setCountryDialog({ mode: "create", values: emptyCountryForm() })}
                     onDelete={(row) => setDeleteTarget({ type: "country", row })}
                     onEdit={(row) => setCountryDialog({ mode: "edit", row, values: countryForm(row) })}
@@ -361,7 +326,7 @@ export function AdminPageClient() {
                     page={page - 1}
                     pageSize={PAGE_SIZE}
                     rows={emissionRows}
-                    total={emissionPage?.total ?? 0}
+                    total={emissionsQuery.data?.total ?? 0}
                     onCreate={() => setEmissionDialog({ mode: "create", values: emptyEmissionForm() })}
                     onDelete={(row) => setDeleteTarget({ type: "emission", row })}
                     onEdit={(row) => setEmissionDialog({ mode: "edit", row, values: emissionForm(row) })}
@@ -373,7 +338,7 @@ export function AdminPageClient() {
                     page={page - 1}
                     pageSize={PAGE_SIZE}
                     rows={sectorRows}
-                    total={sectorPage?.total ?? 0}
+                    total={sectorQuery.data?.total ?? 0}
                     onCreate={() => setSectorDialog({ mode: "create", values: emptySectorForm() })}
                     onDelete={(row) => setDeleteTarget({ type: "sectorShare", row })}
                     onEdit={(row) => setSectorDialog({ mode: "edit", row, values: sectorForm(row) })}

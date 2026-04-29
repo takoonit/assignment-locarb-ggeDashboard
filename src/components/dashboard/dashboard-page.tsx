@@ -132,7 +132,6 @@ export function DashboardPage() {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        overflow: { md: "hidden" },
       }}
     >
       <Box
@@ -140,12 +139,12 @@ export function DashboardPage() {
           flex: 1,
           maxWidth: 1600,
           mx: "auto",
-          px: { xs: 2, sm: 3, md: 2.5, xl: 3 },
-          py: { xs: 3, md: 1.5 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 3, md: 2.5 },
           width: "100%",
         }}
       >
-        <Stack spacing={{ xs: 3, md: 1.35 }} sx={{ height: { md: "100%" }, minHeight: 0 }}>
+        <Stack spacing={{ xs: 3, md: 2 }} sx={{ minHeight: 0 }}>
           <DashboardTitle />
           <DashboardControls
             availableSectorYears={availableSectorYears}
@@ -163,14 +162,11 @@ export function DashboardPage() {
             sx={{
               alignItems: "stretch",
               display: "grid",
-              flex: { md: 1 },
-              gap: { xs: 2, md: 1.5 },
+              gap: { xs: 2, md: 2 },
               gridTemplateColumns: {
                 xs: "1fr",
-                lg: "minmax(0, 1.45fr) minmax(320px, 0.55fr)",
+                lg: "minmax(0, 1.45fr) minmax(300px, 0.55fr)",
               },
-              gridTemplateRows: { lg: "minmax(258px, 0.43fr) minmax(0, 0.57fr)" },
-              minHeight: 0,
             }}
           >
             <ChartCard
@@ -304,11 +300,8 @@ function DashboardControls({
       component="div"
       role="toolbar"
       sx={{
-        alignItems: { xs: "stretch", md: "center" },
-        display: "inline-flex",
-        flexShrink: 0,
         maxWidth: "100%",
-        width: "fit-content",
+        overflowX: "auto",
       }}
     >
       <Box
@@ -316,7 +309,8 @@ function DashboardControls({
           alignItems: { xs: "stretch", md: "flex-end" },
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          gap: { xs: cohereTokens.spacing.md, md: cohereTokens.spacing.sm },
+          gap: { xs: cohereTokens.spacing.md, md: cohereTokens.spacing.md },
+          minWidth: "fit-content",
         }}
       >
         <CountrySelect
