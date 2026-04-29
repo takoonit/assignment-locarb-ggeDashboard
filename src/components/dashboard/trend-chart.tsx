@@ -62,8 +62,8 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
 
   return (
     <Stack spacing={cohereTokens.spacing.sm} sx={{ height: "100%", minHeight: 0 }}>
-      <Box sx={{ flex: 1, minHeight: { xs: 230, md: 168 }, width: "100%" }}>
-        <ResponsiveContainer height="100%" width="100%">
+      <Box sx={{ height: { xs: 230, md: 168 }, width: "100%" }}>
+        <ResponsiveContainer height="100%" width="100%" minHeight={168}>
           <LineChart data={data.points} margin={CHART_MARGIN}>
             <CartesianGrid stroke={cohereTokens.colors.cardBorder} vertical={false} />
             <XAxis dataKey="year" stroke={cohereTokens.colors.slate} tick={AXIS_TICK} />

@@ -55,7 +55,7 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
   return (
     <Stack spacing={cohereTokens.spacing.sm} sx={{ height: "100%", minHeight: 0 }}>
       <Box sx={{ height: { xs: 230, md: 128 }, flexShrink: 0, width: "100%" }}>
-        <ResponsiveContainer height="100%" width="100%">
+        <ResponsiveContainer height="100%" width="100%" minHeight={128}>
           <BarChart
             data={values}
             layout="vertical"
