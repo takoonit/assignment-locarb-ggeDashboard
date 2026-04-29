@@ -1,7 +1,7 @@
 # Story B15 - README
 
 **Epic:** 6 - Delivery  
-**Status:** Todo  
+**Status:** Done  
 **Dependencies:** B1-B14  
 
 ## Story
