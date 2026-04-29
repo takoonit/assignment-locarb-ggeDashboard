@@ -6,11 +6,39 @@ import { Box, Button, Container, Typography, Stack } from "@mui/material";
 import { signIn } from "next-auth/react";
 import { cohereTokens } from "@/theme";
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 export function SignInContent() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/";
   const error = searchParams.get("error");
+  const [isSigning, setIsSigning] = useState(false);
+
+  // Validate callbackUrl to ensure it is safe (relative or same origin)
+  const callbackUrl = (() => {
+    try {
+      if (rawCallbackUrl.startsWith("/") && !rawCallbackUrl.startsWith("//")) {
+        return rawCallbackUrl;
+      }
+      const url = new URL(rawCallbackUrl);
+      if (url.origin === window.location.origin) {
+        return rawCallbackUrl;
+      }
+    } catch {
+      // Not a valid URL or other error, fallback to safe default
+    }
+    return "/";
+  })();
+
+  const handleSignIn = async () => {
+    if (isSigning) return;
+    setIsSigning(true);
+    try {
+      await signIn("github", { callbackUrl });
+    } finally {
+      setIsSigning(false);
+    }
+  };
 
   return (
     <Box
@@ -141,6 +169,8 @@ export function SignInContent() {
 
               {error && (
                 <Box
+                  role="alert"
+                  aria-live="assertive"
                   sx={{
                     bgcolor: "#fef2f2",
                     border: `1px solid ${cohereTokens.colors.error}`,
@@ -156,7 +186,8 @@ export function SignInContent() {
 
               <Button
                 fullWidth
-                onClick={() => signIn("github", { callbackUrl })}
+                disabled={isSigning}
+                onClick={handleSignIn}
                 startIcon={<GitHubIcon />}
                 variant="contained"
                 sx={{
@@ -173,7 +204,7 @@ export function SignInContent() {
                   transition: "all 0.2s ease",
                 }}
               >
-                Sign in with GitHub
+                {isSigning ? "Signing in..." : "Sign in with GitHub"}
               </Button>
             </Stack>
 

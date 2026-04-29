@@ -56,7 +56,11 @@ export async function listAdminCountriesPaged({
 export async function createCountry(body: { code: string; name: string; isRegion?: boolean }) {
   try {
     return await db.country.create({
-      data: { code: body.code.toUpperCase(), name: body.name, isRegion: body.isRegion ?? false },
+      data: {
+        code: body.code.trim().toUpperCase(),
+        name: body.name.trim(),
+        isRegion: body.isRegion ?? false,
+      },
       select: { id: true, code: true, name: true, isRegion: true },
     });
   } catch (error) {
@@ -72,8 +76,8 @@ export async function updateCountry(id: string, body: { code?: string; name?: st
     return await db.country.update({
       where: { id },
       data: {
-        ...(body.code !== undefined ? { code: body.code.toUpperCase() } : {}),
-        ...(body.name !== undefined ? { name: body.name } : {}),
+        ...(body.code !== undefined ? { code: body.code.trim().toUpperCase() } : {}),
+        ...(body.name !== undefined ? { name: body.name.trim() } : {}),
         ...(body.isRegion !== undefined ? { isRegion: body.isRegion } : {}),
       },
       select: { id: true, code: true, name: true, isRegion: true },
@@ -112,7 +116,7 @@ export async function getEmissionsTrend({
   toYear?: number;
 }) {
   const country = await db.country.findUnique({
-    where: { code: countryCode },
+    where: { code: countryCode.trim().toUpperCase() },
     select: { id: true, code: true, name: true },
   });
 
@@ -201,7 +205,7 @@ export async function getSectorBreakdown({
   year: number;
 }) {
   const country = await db.country.findUnique({
-    where: { code: countryCode },
+    where: { code: countryCode.trim().toUpperCase() },
     select: { id: true, code: true, name: true },
   });
 
@@ -229,7 +233,17 @@ export async function getSectorBreakdown({
 
 export async function getAvailableMapYears() {
   const rows = await db.annualEmission.findMany({
-    where: { total: { not: null } },
+    where: {
+      OR: [
+        { total: { not: null } },
+        { co2: { not: null } },
+        { ch4: { not: null } },
+        { n2o: { not: null } },
+        { hfc: { not: null } },
+        { pfc: { not: null } },
+        { sf6: { not: null } },
+      ],
+    },
     select: { year: true },
     distinct: ["year"],
     orderBy: { year: "desc" },
@@ -239,7 +253,7 @@ export async function getAvailableMapYears() {
 
 export async function getAvailableSectorYears(countryCode: string) {
   const country = await db.country.findUnique({
-    where: { code: countryCode },
+    where: { code: countryCode.trim().toUpperCase() },
     select: { id: true },
   });
   if (!country) return [];
@@ -274,7 +288,7 @@ export async function getFilteredEmission({
   year: number;
 }) {
   const country = await db.country.findUnique({
-    where: { code: countryCode },
+    where: { code: countryCode.trim().toUpperCase() },
     select: { id: true, code: true, name: true },
   });
 
@@ -349,7 +363,7 @@ export async function createAnnualEmission(body: {
   sf6?: number | null;
 }) {
   const country = await db.country.findUnique({
-    where: { code: body.countryCode },
+    where: { code: body.countryCode.trim().toUpperCase() },
     select: { id: true },
   });
 

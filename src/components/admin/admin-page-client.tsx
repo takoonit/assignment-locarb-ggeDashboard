@@ -66,8 +66,17 @@ export function AdminPageClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const tab = (searchParams.get("tab") as TabKey | null) ?? "countries";
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
+  const tab = useMemo(() => {
+    const rawTab = searchParams.get("tab");
+    const allowed: TabKey[] = ["countries", "emissions", "sectorShares"];
+    return allowed.includes(rawTab as TabKey) ? (rawTab as TabKey) : "countries";
+  }, [searchParams]);
+
+  const page = useMemo(() => {
+    const rawPage = searchParams.get("page");
+    const parsed = parseInt(rawPage ?? "1", 10);
+    return isNaN(parsed) || parsed < 1 ? 1 : parsed;
+  }, [searchParams]);
 
   const queryClient = useQueryClient();
 
@@ -187,7 +196,14 @@ export function AdminPageClient() {
   async function saveEmission() {
     if (!emissionDialog) return;
     const body = emissionBody(emissionDialog.values);
-    if (!body.countryCode || Number.isNaN(body.year)) {
+    
+    // Validate that all numeric fields are valid numbers
+    const numericFields: EmissionField[] = ["total", "co2", "ch4", "n2o", "hfc", "pfc", "sf6"];
+    const hasInvalidNumeric = numericFields.some(field => 
+      body[field] !== null && isNaN(body[field] as number)
+    );
+
+    if (!body.countryCode || isNaN(body.year) || hasInvalidNumeric) {
       setMutationError("INVALID_PARAMS");
       return;
     }
@@ -207,7 +223,14 @@ export function AdminPageClient() {
   async function saveSectorShare() {
     if (!sectorDialog) return;
     const body = sectorBody(sectorDialog.values);
-    if (!body.countryCode || Number.isNaN(body.year)) {
+
+    // Validate that all numeric fields are valid numbers
+    const numericFields: SectorField[] = ["transport", "manufacturing", "electricity", "buildings", "other"];
+    const hasInvalidNumeric = numericFields.some(field => 
+      body[field] !== null && isNaN(body[field] as number)
+    );
+
+    if (!body.countryCode || isNaN(body.year) || hasInvalidNumeric) {
       setMutationError("INVALID_PARAMS");
       return;
     }
@@ -288,7 +311,7 @@ export function AdminPageClient() {
           ) : null}
         </Stack>
 
-        {fetchError ? <Alert severity="error">Failed to load data: {fetchError}</Alert> : null}
+        {fetchError ? <Alert severity="error">Failed to load data: {fetchError.message}</Alert> : null}
         {mutationError ? <Alert severity="error">Mutation failed: {mutationError}</Alert> : null}
 
         <Paper variant="outlined" sx={{ borderColor: cohereTokens.colors.cardBorder, overflow: "hidden" }}>
@@ -415,21 +438,29 @@ function CountriesPanel({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.code}</TableCell>
-                <TableCell>{row.name}</TableCell>
-                <TableCell>{row.isRegion ? "Yes" : "No"}</TableCell>
-                <TableCell align="right">
-                  <RowActions
-                    deleteLabel="Delete country"
-                    editLabel="Edit country"
-                    onDelete={() => onDelete(row)}
-                    onEdit={() => onEdit(row)}
-                  />
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center" sx={{ py: 3, color: "text.secondary" }}>
+                  No records found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>{row.code}</TableCell>
+                  <TableCell>{row.name}</TableCell>
+                  <TableCell>{row.isRegion ? "Yes" : "No"}</TableCell>
+                  <TableCell align="right">
+                    <RowActions
+                      deleteLabel="Delete country"
+                      editLabel="Edit country"
+                      onDelete={() => onDelete(row)}
+                      onEdit={() => onEdit(row)}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
           <TableFooter>
             <TableRow>
@@ -483,23 +514,31 @@ function EmissionsPanel({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.countryCode}</TableCell>
-                <TableCell>{row.year}</TableCell>
-                {emissionFields.map((field) => (
-                  <TableCell key={field}>{formatNullable(row[field])}</TableCell>
-                ))}
-                <TableCell align="right">
-                  <RowActions
-                    deleteLabel="Delete annual emission"
-                    editLabel="Edit annual emission"
-                    onDelete={() => onDelete(row)}
-                    onEdit={() => onEdit(row)}
-                  />
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={emissionFields.length + 3} align="center" sx={{ py: 3, color: "text.secondary" }}>
+                  No records found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>{row.countryCode}</TableCell>
+                  <TableCell>{row.year}</TableCell>
+                  {emissionFields.map((field) => (
+                    <TableCell key={field}>{formatNullable(row[field])}</TableCell>
+                  ))}
+                  <TableCell align="right">
+                    <RowActions
+                      deleteLabel="Delete annual emission"
+                      editLabel="Edit annual emission"
+                      onDelete={() => onDelete(row)}
+                      onEdit={() => onEdit(row)}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
           <TableFooter>
             <TableRow>
@@ -554,23 +593,31 @@ function SectorSharesPanel({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.countryCode}</TableCell>
-                <TableCell>{row.year}</TableCell>
-                {sectorFields.map((field) => (
-                  <TableCell key={field}>{formatNullable(row[field])}</TableCell>
-                ))}
-                <TableCell align="right">
-                  <RowActions
-                    deleteLabel="Delete sector share"
-                    editLabel="Edit sector share"
-                    onDelete={() => onDelete(row)}
-                    onEdit={() => onEdit(row)}
-                  />
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={sectorFields.length + 3} align="center" sx={{ py: 3, color: "text.secondary" }}>
+                  No records found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>{row.countryCode}</TableCell>
+                  <TableCell>{row.year}</TableCell>
+                  {sectorFields.map((field) => (
+                    <TableCell key={field}>{formatNullable(row[field])}</TableCell>
+                  ))}
+                  <TableCell align="right">
+                    <RowActions
+                      deleteLabel="Delete sector share"
+                      editLabel="Edit sector share"
+                      onDelete={() => onDelete(row)}
+                      onEdit={() => onEdit(row)}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
           <TableFooter>
             <TableRow>

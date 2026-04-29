@@ -23,7 +23,6 @@ import { cohereTokens } from "@/theme";
 const DEFAULT_COUNTRY = "THA";
 const DEFAULT_YEAR = 2020;
 const DEFAULT_GAS: Gas = "TOTAL";
-const FALLBACK_AVAILABLE_YEARS = [2022, 2020, 2019];
 
 export function DashboardPage() {
   const router = useRouter();
@@ -31,15 +30,15 @@ export function DashboardPage() {
   const searchParams = useSearchParams();
 
   const initialCountry = sanitizeCountry(searchParams.get("country"));
-  const initialYear = sanitizeYear(
-    searchParams.get("year") ?? searchParams.get("sectorYear") ?? searchParams.get("mapYear"),
-  );
+  const initialSectorYear = sanitizeYear(searchParams.get("sectorYear") ?? searchParams.get("year"));
+  const initialMapYear = sanitizeYear(searchParams.get("mapYear") ?? searchParams.get("year"));
   const initialGas = sanitizeGas(
     searchParams.get("gas") ?? searchParams.get("trendGas") ?? searchParams.get("mapGas"),
   );
 
   const [country, setCountry] = useState(initialCountry);
-  const [year, setYear] = useState(initialYear);
+  const [sectorYear, setSectorYear] = useState(initialSectorYear);
+  const [mapYear, setMapYear] = useState(initialMapYear);
   const [gas, setGas] = useState<Gas>(initialGas);
 
   const countries = useCountries();
@@ -52,32 +51,32 @@ export function DashboardPage() {
   const mapYearOptions = useAvailableMapYears();
 
   const availableSectorYears = useMemo(
-    () => sectorYearOptions.data ?? FALLBACK_AVAILABLE_YEARS,
+    () => sectorYearOptions.data ?? [],
     [sectorYearOptions.data],
   );
   const availableMapYears = useMemo(
-    () => mapYearOptions.data ?? FALLBACK_AVAILABLE_YEARS,
+    () => mapYearOptions.data ?? [],
     [mapYearOptions.data],
   );
 
   // Snap to the closest available year if the selected year has no data for this country.
   const effectiveSectorYear = useMemo(() => {
-    if (availableSectorYears.length === 0 || availableSectorYears.includes(year)) return year;
-    return closestAvailableYear(year, availableSectorYears);
-  }, [availableSectorYears, year]);
+    if (availableSectorYears.length === 0 || availableSectorYears.includes(sectorYear)) return sectorYear;
+    return closestAvailableYear(sectorYear, availableSectorYears);
+  }, [availableSectorYears, sectorYear]);
 
   // Snap to the closest available year if the selected year has no global map data.
   const effectiveMapYear = useMemo(() => {
-    if (availableMapYears.length === 0 || availableMapYears.includes(year)) return year;
-    return closestAvailableYear(year, availableMapYears);
-  }, [availableMapYears, year]);
+    if (availableMapYears.length === 0 || availableMapYears.includes(mapYear)) return mapYear;
+    return closestAvailableYear(mapYear, availableMapYears);
+  }, [availableMapYears, mapYear]);
 
   const sector = useSectorData(country, effectiveSectorYear);
   const map = useMapData(effectiveMapYear, gas);
 
   const query = useMemo(
-    () => ({ country, year: effectiveSectorYear, gas }),
-    [country, effectiveSectorYear, gas],
+    () => ({ country, sectorYear: effectiveSectorYear, mapYear: effectiveMapYear, gas }),
+    [country, effectiveSectorYear, effectiveMapYear, gas],
   );
 
   const updateQuery = useCallback(
@@ -86,7 +85,8 @@ export function DashboardPage() {
       const params = new URLSearchParams();
 
       if (merged.country !== DEFAULT_COUNTRY) params.set("country", merged.country);
-      if (merged.year !== DEFAULT_YEAR) params.set("year", String(merged.year));
+      if (merged.sectorYear !== DEFAULT_YEAR) params.set("sectorYear", String(merged.sectorYear));
+      if (merged.mapYear !== DEFAULT_YEAR) params.set("mapYear", String(merged.mapYear));
       if (merged.gas !== DEFAULT_GAS) params.set("gas", merged.gas);
 
       const href = params.toString() ? `${pathname}?${params.toString()}` : pathname;
@@ -96,14 +96,14 @@ export function DashboardPage() {
   );
 
   useEffect(() => {
-    if (effectiveSectorYear === year) return;
-    updateQuery({ year: effectiveSectorYear });
-  }, [effectiveSectorYear, updateQuery, year]);
+    if (effectiveSectorYear === sectorYear) return;
+    updateQuery({ sectorYear: effectiveSectorYear });
+  }, [effectiveSectorYear, updateQuery, sectorYear]);
 
   useEffect(() => {
-    if (effectiveMapYear === year) return;
-    updateQuery({ year: effectiveMapYear });
-  }, [effectiveMapYear, updateQuery, year]);
+    if (effectiveMapYear === mapYear) return;
+    updateQuery({ mapYear: effectiveMapYear });
+  }, [effectiveMapYear, updateQuery, mapYear]);
 
   function handleCountry(nextCountry: string) {
     setCountry(nextCountry);
@@ -111,13 +111,13 @@ export function DashboardPage() {
   }
 
   function handleSectorYear(nextYear: number) {
-    setYear(nextYear);
-    updateQuery({ year: nextYear });
+    setSectorYear(nextYear);
+    updateQuery({ sectorYear: nextYear });
   }
 
   function handleMapYear(nextYear: number) {
-    setYear(nextYear);
-    updateQuery({ year: nextYear });
+    setMapYear(nextYear);
+    updateQuery({ mapYear: nextYear });
   }
 
   function handleGas(nextGas: Gas) {
@@ -155,7 +155,7 @@ export function DashboardPage() {
             onCountryChange={handleCountry}
             onGasChange={handleGas}
             onSectorYearChange={handleSectorYear}
-            sectorYearSnapped={effectiveSectorYear !== year}
+            sectorYearSnapped={effectiveSectorYear !== sectorYear}
           />
 
           <Box
@@ -201,7 +201,7 @@ export function DashboardPage() {
                       onChange={handleMapYear}
                       value={effectiveMapYear}
                       years={availableMapYears}
-                      snapped={effectiveMapYear !== year}
+                      snapped={effectiveMapYear !== mapYear}
                     />
                   </Stack>
                 }

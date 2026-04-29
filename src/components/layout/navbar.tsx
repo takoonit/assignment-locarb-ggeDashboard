@@ -11,10 +11,11 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import { cohereTokens } from "@/theme";
 
 export function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
 
-  const isAdmin = session?.user.role === "ADMIN";
+  const loading = status === "loading";
+  const isAdmin = status === "authenticated" && session?.user.role === "ADMIN";
 
   return (
     <Box
@@ -99,7 +100,7 @@ export function Navbar() {
               sx={{ display: { xs: "flex", md: "none" }, mr: 1 }}
             >
               <Tooltip title="API Docs">
-                <IconButton component={Link} href="/api/docs" size="small">
+                <IconButton aria-label="Open API docs" component={Link} href="/api/docs" size="small">
                   <DescriptionIcon
                     sx={{
                       fontSize: 18,
@@ -112,7 +113,7 @@ export function Navbar() {
               </Tooltip>
               {isAdmin && (
                 <Tooltip title="Admin Dashboard">
-                  <IconButton component={Link} href="/admin" size="small">
+                  <IconButton aria-label="Admin Dashboard" component={Link} href="/admin" size="small">
                     <AdminPanelSettingsIcon
                       sx={{
                         fontSize: 18,
@@ -126,66 +127,71 @@ export function Navbar() {
               )}
             </Stack>
 
-            {session ? (
-              <Button
-                component={Link}
-                href="/auth/signout"
-                size="small"
-                variant="outlined"
-                sx={{
-                  borderColor: cohereTokens.colors.borderLight,
-                  borderRadius: cohereTokens.rounded.pill,
-                  color: cohereTokens.colors.bodyMuted,
-                  display: { xs: "none", sm: "flex" },
-                  fontSize: 12,
-                  fontWeight: 600,
-                  px: 2,
-                  textTransform: "none",
-                  "&:hover": {
-                    bgcolor: cohereTokens.colors.softEarth,
-                    borderColor: cohereTokens.colors.hairline,
-                    color: cohereTokens.colors.primary,
-                  },
-                }}
-              >
-                Sign out
-              </Button>
-            ) : (
-              <Button
-                component={Link}
-                href="/auth/signin"
-                size="small"
-                variant="contained"
-                sx={{
-                  bgcolor: cohereTokens.colors.carbonBlack,
-                  borderRadius: cohereTokens.rounded.pill,
-                  color: cohereTokens.colors.onPrimary,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  px: 2.5,
-                  textTransform: "none",
-                  "&:hover": {
-                    bgcolor: cohereTokens.colors.primary,
-                    transform: "translateY(-1px)",
-                  },
-                  transition: "all 0.2s ease",
-                }}
-              >
-                Sign in
-              </Button>
-            )}
+            {!loading && (
+              <>
+                {session ? (
+                  <Button
+                    component={Link}
+                    href="/auth/signout"
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      borderColor: cohereTokens.colors.borderLight,
+                      borderRadius: cohereTokens.rounded.pill,
+                      color: cohereTokens.colors.bodyMuted,
+                      display: { xs: "none", sm: "flex" },
+                      fontSize: 12,
+                      fontWeight: 600,
+                      px: 2,
+                      textTransform: "none",
+                      "&:hover": {
+                        bgcolor: cohereTokens.colors.softEarth,
+                        borderColor: cohereTokens.colors.hairline,
+                        color: cohereTokens.colors.primary,
+                      },
+                    }}
+                  >
+                    Sign out
+                  </Button>
+                ) : (
+                  <Button
+                    component={Link}
+                    href="/auth/signin"
+                    size="small"
+                    variant="contained"
+                    sx={{
+                      bgcolor: cohereTokens.colors.carbonBlack,
+                      borderRadius: cohereTokens.rounded.pill,
+                      color: cohereTokens.colors.onPrimary,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      px: 2.5,
+                      textTransform: "none",
+                      "&:hover": {
+                        bgcolor: cohereTokens.colors.primary,
+                        transform: "translateY(-1px)",
+                      },
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    Sign in
+                  </Button>
+                )}
 
-            {session && (
-              <Tooltip title="Sign out">
-                <IconButton
-                  component={Link}
-                  href="/auth/signout"
-                  size="small"
-                  sx={{ display: { xs: "flex", sm: "none" } }}
-                >
-                  <LogoutIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
+                {session && (
+                  <Tooltip title="Sign out">
+                    <IconButton
+                      aria-label="Sign out"
+                      component={Link}
+                      href="/auth/signout"
+                      size="small"
+                      sx={{ display: { xs: "flex", sm: "none" } }}
+                    >
+                      <LogoutIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
             )}
           </Stack>
         </Stack>
