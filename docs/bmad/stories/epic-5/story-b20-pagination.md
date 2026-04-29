@@ -1,7 +1,7 @@
 # Story B20 - Admin Table Pagination
 
 **Epic:** 5 - Advanced Features
-**Status:** Todo
+**Status:** Done
 **Dependencies:** B13
 
 ## Story
