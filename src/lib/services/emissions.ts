@@ -1,7 +1,20 @@
 import { db } from "@/lib/db";
 import { ApiError } from "@/lib/api/error";
+import { GasSchema } from "@/lib/schemas";
 
 type PrismaErrorLike = { code: string };
+
+function getValidatedGasField(gas: string) {
+  const result = GasSchema.safeParse(gas.toUpperCase());
+  if (!result.success) {
+    throw new ApiError(
+      "INVALID_PARAMS",
+      { message: `Invalid gas: ${gas}.` },
+      400,
+    );
+  }
+  return result.data.toLowerCase();
+}
 
 // ─── Countries ────────────────────────────────────────────────────────────────
 
@@ -10,6 +23,13 @@ export async function listCountries({ includeRegions = false }: { includeRegions
     where: includeRegions ? {} : { isRegion: false },
     select: { code: true, name: true, isRegion: true },
     orderBy: { name: "asc" },
+  });
+}
+
+export async function listAdminCountries() {
+  return db.country.findMany({
+    select: { id: true, code: true, name: true, isRegion: true },
+    orderBy: [{ name: "asc" }, { code: "asc" }],
   });
 }
 
@@ -78,7 +98,7 @@ export async function getEmissionsTrend({
 
   if (!country) return null;
 
-  const gasField = gas.toLowerCase() as string;
+  const gasField = getValidatedGasField(gas);
 
   const emissions = (await db.annualEmission.findMany({
     where: {
@@ -124,7 +144,7 @@ export async function getEmissionsMap({
   gas?: string;
   includeRegions?: boolean;
 }) {
-  const gasField = gas.toLowerCase() as string;
+  const gasField = getValidatedGasField(gas);
 
   const countries = (await db.country.findMany({
     where: includeRegions ? {} : { isRegion: false },
@@ -240,7 +260,7 @@ export async function getFilteredEmission({
 
   if (!country) throw new ApiError("NOT_FOUND", { country: countryCode }, 404);
 
-  const gasField = gas.toLowerCase() as string;
+  const gasField = getValidatedGasField(gas);
 
   const emission = (await db.annualEmission.findUnique({
     where: { countryId_year: { countryId: country.id, year } },
@@ -379,6 +399,15 @@ export async function deleteAnnualEmission(id: string) {
   }
 }
 
+export async function listAdminAnnualEmissions() {
+  const rows = await db.annualEmission.findMany({
+    select: annualEmissionSelect,
+    orderBy: [{ country: { code: "asc" } }, { year: "desc" }],
+  });
+
+  return rows.map(formatAnnualEmission);
+}
+
 // ─── Write: Sector Shares ─────────────────────────────────────────────────────
 
 const sectorShareSelect = {
@@ -488,6 +517,15 @@ export async function deleteSectorShare(id: string) {
       notFoundMessage: "Sector share record not found.",
     });
   }
+}
+
+export async function listAdminSectorShares() {
+  const rows = await db.sectorShare.findMany({
+    select: sectorShareSelect,
+    orderBy: [{ country: { code: "asc" } }, { year: "desc" }],
+  });
+
+  return rows.map(formatSectorShare);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
