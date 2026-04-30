@@ -227,3 +227,12 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** Recharts `ResponsiveContainer` can emit repeated console warnings when it mounts before its parent layout has a valid positive width and height. In this dashboard, the warning surfaced as intermittent `width(-1)` / `height(-1)` messages during chart mount and resize transitions.
 **Decision:** Gate chart mounting behind a measured wrapper component. The wrapper uses `ResizeObserver` in the browser to wait until the host element has a real positive width and height before rendering `ResponsiveContainer`. In non-browser test environments where `ResizeObserver` is unavailable, the wrapper falls back to immediate render.
 **Consequence:** The charts no longer attempt to mount against invalid dimensions, which prevents the Recharts console warning instead of merely reducing its likelihood. This adds a small reusable wrapper component and a bit of mount indirection, but keeps chart logging clean and layout behavior deterministic.
+
+---
+
+# ADR-024: Rewrite AGENTS.md to enforce stricter agent operating rules
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** Existing dashboard improvements were repeatedly dropped during branch and commit handling. This included not only larger items such as export support and slider behavior, but also smaller UX/UI refinements. The problem was not primarily missing specs. The problem was that agent workflow rules were too loose: instruction precedence, package-manager truth, commit scoping, staging discipline, and restoration handling were not enforced strictly enough. That ambiguity allowed unrelated changes to be mixed together and previously completed work to be lost or overwritten.
+**Decision:** Rewrite `AGENTS.md` as a strict repo policy file. It must explicitly define instruction precedence, enforce `bun` as the package manager for this repo, require narrow commit scoping, distinguish restoration work from new development, and require agents to inspect and call out unrelated working-tree changes before staging.
+**Consequence:** The repo becomes more constrained, but future agents have less room to reinterpret workflow expectations or bundle unrelated work. Existing improvements should be less likely to disappear through broad commits or ambiguous process handling, and restoration work becomes easier to separate from genuinely new implementation.
