@@ -1,8 +1,6 @@
 "use client";
 
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import {
   Alert,
   Box,
@@ -651,7 +649,7 @@ function PanelHeader({
       <Typography component="h2" variant="h3" sx={{ fontSize: 22 }}>
         {title}
       </Typography>
-      <Button onClick={onCreate} startIcon={<AddIcon />} variant="contained">
+      <Button onClick={onCreate} startIcon={<Plus size={18} />} variant="contained">
         {action}
       </Button>
     </Stack>
@@ -673,12 +671,12 @@ function RowActions({
     <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
       <Tooltip title={editLabel}>
         <IconButton aria-label={editLabel} onClick={onEdit} size="small">
-          <EditIcon fontSize="small" />
+          <Pencil size={18} />
         </IconButton>
       </Tooltip>
       <Tooltip title={deleteLabel}>
         <IconButton aria-label={deleteLabel} color="error" onClick={onDelete} size="small">
-          <DeleteIcon fontSize="small" />
+          <Trash2 size={18} />
         </IconButton>
       </Tooltip>
     </Stack>

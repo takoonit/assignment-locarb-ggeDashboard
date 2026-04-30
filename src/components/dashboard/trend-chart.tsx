@@ -1,7 +1,6 @@
 "use client";
 
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Box, IconButton, Paper, Slider, Stack, Typography } from "@mui/material";
 import {
   CartesianGrid,
@@ -209,7 +208,7 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
                 borderRadius: `${cohereTokens.rounded.sm}px`,
               }}
             >
-              <ChevronLeftIcon fontSize="small" />
+              <ChevronLeft size={16} />
             </IconButton>
             <Box sx={{ flex: 1 }}>
               <Slider
@@ -256,7 +255,7 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
                 borderRadius: `${cohereTokens.rounded.sm}px`,
               }}
             >
-              <ChevronRightIcon fontSize="small" />
+              <ChevronRight size={16} />
             </IconButton>
           </Stack>
         </Box>

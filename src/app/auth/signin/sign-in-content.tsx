@@ -1,7 +1,6 @@
 "use client";
 
-import GitHubIcon from "@mui/icons-material/GitHub";
-import AutoGraphIcon from "@mui/icons-material/AutoGraph";
+import { Github, Activity } from "lucide-react";
 import { Box, Button, Container, Typography, Stack } from "@mui/material";
 import { signIn } from "next-auth/react";
 import { cohereTokens } from "@/theme";
@@ -74,7 +73,7 @@ export function SignInContent() {
               width: 48,
             }}
           >
-            <AutoGraphIcon sx={{ fontSize: 32 }} />
+            <Activity size={32} />
           </Box>
           <Box>
             <Typography
@@ -188,7 +187,7 @@ export function SignInContent() {
                 fullWidth
                 disabled={isSigning}
                 onClick={handleSignIn}
-                startIcon={<GitHubIcon />}
+                startIcon={<Github size={20} />}
                 variant="contained"
                 sx={{
                   bgcolor: cohereTokens.colors.carbonBlack,

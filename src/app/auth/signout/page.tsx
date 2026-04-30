@@ -1,6 +1,6 @@
 "use client";
 
-import LogoutIcon from "@mui/icons-material/Logout";
+import { LogOut } from "lucide-react";
 import { Box, Button, Container, Typography, Stack, Paper } from "@mui/material";
 import { signOut } from "next-auth/react";
 import { cohereTokens } from "@/theme";
@@ -59,7 +59,7 @@ export default function SignOutPage() {
               <Button
                 fullWidth
                 onClick={() => signOut({ callbackUrl: "/" })}
-                startIcon={<LogoutIcon />}
+                startIcon={<LogOut size={18} />}
                 variant="contained"
                 sx={{
                   bgcolor: cohereTokens.colors.error,

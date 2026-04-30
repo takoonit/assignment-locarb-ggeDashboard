@@ -6,7 +6,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { Info, Calendar } from "lucide-react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import type { CountryOption, Gas } from "@/lib/dashboard-types";
@@ -76,12 +76,13 @@ export function YearSelect({ id, label, ariaLabel = label, value, years, onChang
                 mt: "-4px",
               }}
             >
-              <InfoOutlinedIcon sx={{ fontSize: 14 }} />
+              <Info size={14} />
             </Box>
           </Tooltip>
         ) : null}
       </Box>
       <DatePicker
+        slots={{ openPickerIcon: () => <Calendar size={16} /> }}
         views={["year"]}
         openTo="year"
         value={dayjsValue}

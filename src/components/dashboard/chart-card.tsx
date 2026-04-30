@@ -1,4 +1,4 @@
-import ErrorOutlinedIcon from "@mui/icons-material/ErrorOutlined";
+import { AlertTriangle } from "lucide-react";
 import {
   Alert,
   Box,
@@ -140,7 +140,7 @@ export function ChartError({
           </Button>
         ) : null
       }
-      icon={<ErrorOutlinedIcon fontSize="inherit" />}
+      icon={<AlertTriangle size={18} />}
       severity="error"
       sx={{ borderRadius: cohereTokens.rounded.sm }}
     >
