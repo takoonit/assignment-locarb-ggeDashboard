@@ -1,124 +1,115 @@
 # GGE Dashboard
 
-Greenhouse Gas Emissions Dashboard & API.
-
-## Project Status
-
-- Planning docs exported to `docs/`
-- Build phase not started yet; implementation begins when `TASK.md` story B1 starts.
-- BMAD readiness is tracked in `TASK.md`.
-
-This project showcases:
-- A public analytics dashboard with interactive charts and maps
-- A typed REST API with consistent response contracts
-- Admin CRUD capabilities with role-based access control
-- Clean data handling with explicit null semantics
-- End-to-end TypeScript safety and modern tooling
+Greenhouse Gas Emissions Dashboard & API — a production-ready full-stack application with a typed API, interactive data visualisation, and admin management.
 
 ---
 
-## Tech Stack
+## Live Demo
 
-| Layer            | Technology |
-|------------------|-----------|
-| Framework        | Next.js 16 (App Router) + TypeScript |
-| Database         | PostgreSQL (Neon) + Prisma |
-| UI               | MUI + Recharts + react-simple-maps |
-| Authentication   | Auth.js (NextAuth) with GitHub OAuth |
-| Data Fetching    | TanStack Query |
-| Validation       | Zod |
-| API Documentation| Scalar UI + OpenAPI 3.1 |
-| Package Manager  | Bun |
-| Deployment       | Vercel |
+- **App:** https://assignment-locarb-gge-dashboard.vercel.app/
+- **API Docs:** https://assignment-locarb-gge-dashboard.vercel.app/api/docs
+
+---
+
+## Overview
+
+This project delivers a full-stack greenhouse gas emissions dashboard and API with:
+
+- RESTful API endpoints for emissions data
+- Responsive dashboard with charts and world map visualisation
+- Admin CRUD with role-based access control
+- Robust handling of missing and partial datasets
+- Structured documentation for maintainability and handover
 
 ---
 
 ## Features
 
 ### Public Dashboard
-- Emissions trend line visualisation
-- Interactive world map
-- Sector-based breakdown charts
-- Filters by country, gas type, and year range
+
+- Emissions trend line by country over time
+- Interactive world map by selected year
+- Sector comparison chart by country and year
+- Filters for country, gas, and year
+- Empty states for missing or unavailable data
 
 ### Public API
-- RESTful endpoints with consistent response format:
+
+Consistent response contract:
+
 ```json
 { "data": ... }
 ```
-or
+
+or:
+
 ```json
 { "error": { "code": "...", "details": ... } }
 ```
 
-### API Documentation
-- Interactive docs: `/api/docs`
-- OpenAPI spec: `/api/openapi`
+Key endpoints:
+
+- `/api/countries`
+- `/api/emissions/trend`
+- `/api/emissions/map`
+- `/api/emissions/sector`
+- `/api/emissions/filter`
 
 ### Admin Panel
-- Role-protected `/admin` dashboard
+
+- Protected `/admin` route
 - CRUD operations for:
   - Countries
   - Annual emissions
   - Sector shares
-- Server-side pagination
+- Role-based access control
 
-### Data Integrity
-- Missing CSV values are preserved as `null`
-- No silent substitution with `0`
+### Data Handling
 
----
-
-## Documentation & BMAD Approach
-
-This project follows a structured documentation strategy inspired by **BMAD (Build–Measure–Adapt–Document)** principles.
-
-### Documentation Structure
-
-- **README.md** — high-level overview, setup, and usage
-- **API Docs** — OpenAPI 3.1 + Scalar UI for interactive exploration
-- **Design Docs (`design.md`)** — architecture decisions, data flow, and UI reasoning
-- **Schema & Data Contracts** — Prisma schema and Zod validation ensure consistency
-
-### BMAD in Practice
-
-- **Build** — Implement core dashboard and API with strict typing and modular design
-- **Measure** — Validate through type safety, runtime validation (Zod), and test suite
-- **Adapt** — Iterative improvements via tradeoffs and future roadmap
-- **Document** — Maintain clear, developer-friendly docs to support handover and scalability
-
-This ensures the project is not only functional but also maintainable, extensible, and easy for other developers to onboard.
+- Provided CSV is used as seed data only
+- Seed script transforms CSV into application tables
+- Missing CSV values are preserved as `null`, never converted to `0`
+- Partial datasets render gracefully on the frontend
 
 ---
 
-## Getting Started
+## Tech Stack
 
-### Prerequisites
-- Bun 1.0+
-- PostgreSQL database (Neon, Supabase, or local)
-- (Optional) Doppler CLI
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 + TypeScript |
+| Database | PostgreSQL (Neon) + Prisma |
+| UI | MUI + Recharts + react-simple-maps |
+| Auth | Auth.js / NextAuth with GitHub OAuth |
+| Data Fetching | TanStack Query |
+| Validation | Zod |
+| API Docs | Scalar UI + OpenAPI 3.1 |
+| Package Manager | Bun |
+| Deployment | Vercel |
 
 ---
-
-### Installation
-- Next.js 16 (App Router) + TypeScript
-- PostgreSQL on Neon + Prisma
-- MUI with a Material Design 3-inspired theme
-- TanStack Query + Recharts + react-simple-maps
-- Auth.js with GitHub OAuth
-- Zod for validation
-- Vercel deployment
 
 ## Core Decisions
 
 - Single Next.js app for dashboard and API
-- App-oriented data model: `Country`, `AnnualEmission`, `SectorShare`, `User`
-- Seed script transforms the provided CSV into app tables
-- Missing CSV values stay `null`, never `0`
+- App-oriented data model:
+  - `Country`
+  - `AnnualEmission`
+  - `SectorShare`
+  - `User`
+- Public API paths use `/api/emissions/*`
 - `/admin` is a top-level route
 - Gas filter is single-select
+- Route handlers stay thin
+- Business logic lives in `lib/services`
+- Inputs are validated with Zod
+- Prisma queries use explicit `select`
+- Public GET routes do not require auth
+- Create, update, and delete routes require `requireAdmin()`
 
-## Docs
+---
+
+## Documentation
 
 - `docs/00-prd.md`
 - `docs/01-architecture.md`
@@ -129,19 +120,33 @@ This ensures the project is not only functional but also maintainable, extensibl
 - `docs/04-ui-spec.md`
 - `docs/05-ai-workflow.md`
 - `docs/06-tradeoffs-next-steps.md`
+- `docs/07-env-neon-doppler.md`
 - `TASK.md`
+
+---
+
+## BMAD Approach
+
+This project follows a structured Build–Measure–Adapt–Document approach:
+
+- **Build** — Implement the typed API, dashboard, admin CRUD, and seed pipeline
+- **Measure** — Validate behaviour through type safety, Zod validation, and tests
+- **Adapt** — Record tradeoffs and future improvements clearly
+- **Document** — Maintain practical docs for review, handover, and future development
+
+---
 
 ## Getting Started
 
-This project uses [Doppler](https://www.doppler.com/) for secrets management. Real values are never committed — `.env.example` lists the required variable names only.
-
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 20+, [pnpm](https://pnpm.io/), and [Doppler CLI](https://docs.doppler.com/docs/install-cli)
-- Access to the Doppler project for this app
-- A [Neon](https://neon.tech/) PostgreSQL database (see `docs/07-env-neon-doppler.md`)
+- Bun 1.0+
+- PostgreSQL database (Neon recommended)
+- Doppler CLI
 
-### 1. Clone and install
+---
+
+### Installation
 
 ```bash
 git clone <repo-url>
@@ -151,60 +156,103 @@ bun install
 
 ---
 
-### Environment Setup
+## Environment Setup
 
-Copy `.env.example` to `.env.local` and configure:
+This project uses Doppler for secrets management. Real secret values should not be committed to the repository.
+
+Required variables:
 
 | Variable | Description |
-|----------|------------|
+|---|---|
 | DATABASE_URL | PostgreSQL connection string |
-| NEXTAUTH_SECRET | ≥32 random characters |
-| AUTH_GITHUB_ID | GitHub OAuth Client ID |
-| AUTH_GITHUB_SECRET | GitHub OAuth Secret |
-| NEXT_PUBLIC_APP_URL | App base URL |
+| NEXTAUTH_SECRET | Auth.js secret |
+| AUTH_GITHUB_ID | GitHub OAuth client ID |
+| AUTH_GITHUB_SECRET | GitHub OAuth client secret |
+| NEXT_PUBLIC_APP_URL | Application base URL |
+
+See `.env.example` for the expected variable names.
 
 ---
 
-### Database Setup
+## Doppler Setup
+
+```bash
+doppler login
+doppler setup
+```
+
+Run commands through Doppler:
+
+```bash
+doppler run -- bun run dev
+doppler run -- bun run db:migrate:deploy
+doppler run -- bun run db:seed
+```
+
+For full Neon + Doppler setup details, see:
+
+```text
+docs/07-env-neon-doppler.md
+```
+
+---
+
+## Database Setup
+
+Run migrations:
 
 ```bash
 bun run db:migrate:deploy
+```
 
+Seed the database:
+
+```bash
+bun run db:seed
+```
+
+If a custom CSV path is required:
+
+```bash
 SEED_CSV_PATH=/path/to/emissions.csv bun run db:seed
 ```
 
 ---
 
-### Run Development Server
+## Run Development Server
 
 ```bash
 bun run dev
 ```
 
-Visit: http://localhost:3000
+The app will be available at:
+
+```text
+http://localhost:3000
+```
 
 ---
 
 ## Scripts
 
 | Command | Description |
-|--------|------------|
-| bun run dev | Start development server |
-| bun run dev:doppler | Run with Doppler |
-| bun run build | Production build |
-| bun run test | Run tests |
-| bun run typecheck | Type checking |
-| bun run db:seed | Seed database |
+|---|---|
+| `bun run dev` | Start development server |
+| `bun run build` | Production build |
+| `bun run test` | Run tests |
+| `bun run typecheck` | Type checking |
+| `bun run db:migrate:deploy` | Run database migrations |
+| `bun run db:seed` | Seed database |
 
 ---
 
 ## Authentication & Roles
 
-### User Flow
-- Users sign in via GitHub OAuth
-- First login creates a `VIEWER` role user
+- Users sign in with GitHub OAuth
+- First login creates a user with the `VIEWER` role
+- Admin-only writes require the `ADMIN` role
 
-### Promote to Admin
+Promote a user to admin:
 
 ```sql
 UPDATE "User"
@@ -212,94 +260,51 @@ SET role = 'ADMIN'
 WHERE email = 'your@email.com';
 ```
 
-Then re-login to access `/admin`.
+Re-login after promotion to access `/admin`.
 
 ---
 
-## Architecture Decisions
+## API Documentation
 
-### Tradeoffs
+- Interactive docs: `/api/docs`
+- OpenAPI spec: `/api/openapi`
+
+---
+
+## Tradeoffs
 
 - **Single Next.js app**
-  - Simplifies deployment
-  - Limits independent scaling of API/UI
+  - Simpler deployment and review
+  - Less independent scaling between API and UI
 
-- **Direct DB connection**
-  - Simpler setup
+- **Direct database connection**
+  - Simple and practical for this assignment
   - Less optimal for high serverless concurrency
 
-- **MUI over Tailwind**
-  - Faster for structured UI
-  - Less granular styling control
+- **MUI over custom CSS/Tailwind**
+  - Faster structured UI delivery
+  - Less granular visual control
 
 - **Idempotent seeding**
-  - Safe for re-runs
-  - Slightly more complex logic
+  - Safe to re-run
+  - Slightly more complex seed logic
 
 ---
 
 ## Future Improvements
 
 - Admin UI for role management
-- Data export (CSV/JSON)
-- Audit logs for changes
-- Multi-region database optimisation
+- CSV/JSON export
+- Audit logs for admin changes
+- Chart image/PDF export
+- API response caching
 - Load testing and performance tuning
 
 ---
 
 ## Deployment
 
-Deploy directly to Vercel with environment variables configured.
-
----
-
-## License
-
-This project is for demonstration purposes.
-pnpm install
-```
-
-### 2. Connect Doppler
-
-```bash
-doppler login       # one-time authentication
-doppler setup       # link this directory to the Doppler project/config
-```
-
-All five required secrets (`DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `NEXT_PUBLIC_APP_URL`) must be present in Doppler before running the app. See `.env.example` for the full list.
-
-### 3. Run database migrations and seed
-
-```bash
-doppler run -- pnpm db:migrate:deploy
-doppler run -- pnpm db:seed
-```
-
-### 4. Start the dev server
-
-```bash
-doppler run -- pnpm dev
-```
-
-The app will be available at `http://localhost:3000`.
-
-> For full Neon + Doppler setup details see `docs/07-env-neon-doppler.md`.
-
-## Build Notes
-
-- Keep route handlers thin
-- Put business logic in `lib/services`
-- Validate inputs with Zod
-- Use explicit Prisma `select`
-- Public GET routes do not require auth
-- Write routes require `requireAdmin()`
-- API responses use `{ data }` or `{ error: { code, details } }`
-
-
-## Deployment
-
-Deploy directly to Vercel with environment variables configured in Doppler.
+Deploy directly to Vercel with environment variables managed through Doppler.
 
 ---
 
