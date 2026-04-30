@@ -236,3 +236,13 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** Existing dashboard improvements were repeatedly dropped during branch and commit handling. This included not only larger items such as export support and slider behavior, but also smaller UX/UI refinements. The problem was not primarily missing specs. The problem was that agent workflow rules were too loose: instruction precedence, package-manager truth, commit scoping, staging discipline, and restoration handling were not enforced strictly enough. That ambiguity allowed unrelated changes to be mixed together and previously completed work to be lost or overwritten.
 **Decision:** Rewrite `AGENTS.md` as a strict repo policy file. It must explicitly define instruction precedence, enforce `bun` as the package manager for this repo, require narrow commit scoping, distinguish restoration work from new development, and require agents to inspect and call out unrelated working-tree changes before staging.
 **Consequence:** The repo becomes more constrained, but future agents have less room to reinterpret workflow expectations or bundle unrelated work. Existing improvements should be less likely to disappear through broad commits or ambiguous process handling, and restoration work becomes easier to separate from genuinely new implementation.
+
+---
+
+# ADR-025: Seed Recharts `ResponsiveContainer` with the measured host size
+**Status:** Accepted
+**Supersedes:** ADR-023
+**Date:** 2026-04-30
+**Context:** ADR-023 gated chart mounting on a positive host measurement, but Recharts `ResponsiveContainer` still performs its own bootstrap render with `initialDimension = { width: -1, height: -1 }` unless told otherwise. In practice that means the dashboard can still emit the same `width(-1)` / `height(-1)` warning during first mount or Fast Refresh even when the outer wrapper already knows the real host size.
+**Decision:** Keep the measured wrapper, but also pass Recharts an explicit `initialDimension` derived from the wrapper's current measured host width and height. The wrapper should only mount the chart after it has a positive host size, and it should seed `ResponsiveContainer` with that same size on first render.
+**Consequence:** Recharts no longer boots from its `-1 / -1` sentinel dimensions inside this dashboard, so the console warning is eliminated rather than merely delayed. The wrapper becomes slightly more stateful because it tracks the measured size in addition to readiness, but the behavior is deterministic across normal mount and HMR refreshes.
