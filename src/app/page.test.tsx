@@ -168,7 +168,8 @@ describe("Epic 3 dashboard", () => {
     expect(within(map).queryByRole("radiogroup", { name: /map gas/i })).not.toBeInTheDocument();
     expect(await within(map).findByText("Low")).toBeInTheDocument();
     expect(within(map).getByText("High")).toBeInTheDocument();
-    expect(within(map).getByText("No data")).toBeInTheDocument();
+    expect(within(map).queryByText("No data")).not.toBeInTheDocument();
+    expect(within(map).queryByText("Not tracked")).not.toBeInTheDocument();
 
     await waitForYearOptions(dashboardControls);
   }, 10_000);
