@@ -2,9 +2,11 @@ import {
   Box,
   FormControl,
   Select,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import type { CountryOption, Gas } from "@/lib/dashboard-types";
@@ -60,7 +62,25 @@ export function YearSelect({ id, label, ariaLabel = label, value, years, onChang
 
   return (
     <FormControl aria-label={ariaLabel} size="small" sx={{ minWidth: { xs: "100%", sm: 118 } }}>
-      <ControlLabel htmlFor={id}>{label}</ControlLabel>
+      <Box sx={{ alignItems: "center", display: "flex", gap: 0.5 }}>
+        <ControlLabel htmlFor={id}>{label}</ControlLabel>
+        {snapped ? (
+          <Tooltip arrow enterTouchDelay={0} title="Showing nearest available year">
+            <Box
+              aria-label="Showing nearest available year"
+              sx={{
+                alignItems: "center",
+                color: cohereTokens.colors.slate,
+                cursor: "help",
+                display: "inline-flex",
+                mt: "-4px",
+              }}
+            >
+              <InfoOutlinedIcon sx={{ fontSize: 14 }} />
+            </Box>
+          </Tooltip>
+        ) : null}
+      </Box>
       <DatePicker
         views={["year"]}
         openTo="year"
@@ -130,22 +150,6 @@ export function YearSelect({ id, label, ariaLabel = label, value, years, onChang
           },
         }}
       />
-      {snapped ? (
-        <Typography
-          sx={{
-            color: cohereTokens.colors.slate,
-            fontFamily: cohereTokens.font.mono,
-            fontSize: 11,
-            letterSpacing: "0.02em",
-            lineHeight: 1.2,
-            maxWidth: 118,
-            mt: "2px",
-            opacity: 0.72,
-          }}
-        >
-          Showing nearest available year
-        </Typography>
-      ) : null}
     </FormControl>
   );
 }

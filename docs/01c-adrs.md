@@ -200,3 +200,21 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** ADR-007 stated "bundled TopoJSON data" but `world-atlas` TopoJSON cannot be bundled directly via import without a raw-loader or inline JSON import (which adds ~100 KB to the JS bundle). `react-simple-maps` v3 accepts a URL string as the `geography` prop and fetches and parses the TopoJSON internally — this is the canonical usage pattern for the library.
 **Decision:** Pass `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` as the `geography` prop to `<Geographies>`. No bundling or manual `topojson-client` parsing is needed. The map geography uses ISO numeric country IDs which are mapped to ISO alpha-3 codes via a lookup table in the component.
 **Consequence:** The JS bundle does not include the TopoJSON file. The map makes one CDN fetch on first render, cached by the browser thereafter. The implementation stays within the react-simple-maps v3 API without needing `topojson-client` types or manual feature extraction.
+
+---
+
+# ADR-021: Keep explicit world map legend states aligned and always visible
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** The assignment requires the world map to communicate value scale plus missing-data handling clearly. A map legend alignment regression made the legend harder to scan and weakened the distinction between normal scale labels and special states such as `No data` and `Not tracked`.
+**Decision:** Keep the world map legend as a fixed, explicit legend block with aligned entries for sequential scale labels and special non-value states. Preserve dedicated labels for `Low`, `High`, `No data`, and `Not tracked`, and verify their rendering in component tests.
+**Consequence:** The map legend remains reviewer-readable and supports the assignment’s honest-data requirement. The component takes on a small amount of extra layout/test maintenance, but missing-data semantics stay visible instead of being implied by color alone.
+
+---
+
+# ADR-022: Use a temporary tooltip for snapped-year messaging
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** Some year selectors can snap to the nearest available reporting year when the requested year is missing. A persistent helper line under the control communicated this, but it permanently consumed vertical space and added low-signal chrome to dense dashboard control rows.
+**Decision:** Represent snapped-year messaging as a temporary tooltip attached to a small info affordance next to the year label instead of persistent helper typography under the field.
+**Consequence:** The snapped-year explanation remains discoverable on hover/focus/touch without permanently expanding the control layout. This slightly increases reliance on tooltip interaction, but keeps the dashboard controls cleaner while still exposing the behavior.
