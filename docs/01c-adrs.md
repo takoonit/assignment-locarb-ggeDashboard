@@ -218,3 +218,12 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** Some year selectors can snap to the nearest available reporting year when the requested year is missing. A persistent helper line under the control communicated this, but it permanently consumed vertical space and added low-signal chrome to dense dashboard control rows.
 **Decision:** Represent snapped-year messaging as a temporary tooltip attached to a small info affordance next to the year label instead of persistent helper typography under the field.
 **Consequence:** The snapped-year explanation remains discoverable on hover/focus/touch without permanently expanding the control layout. This slightly increases reliance on tooltip interaction, but keeps the dashboard controls cleaner while still exposing the behavior.
+
+---
+
+# ADR-023: Mount Recharts only after the chart wrapper has a measured size
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** Recharts `ResponsiveContainer` can emit repeated console warnings when it mounts before its parent layout has a valid positive width and height. In this dashboard, the warning surfaced as intermittent `width(-1)` / `height(-1)` messages during chart mount and resize transitions.
+**Decision:** Gate chart mounting behind a measured wrapper component. The wrapper uses `ResizeObserver` in the browser to wait until the host element has a real positive width and height before rendering `ResponsiveContainer`. In non-browser test environments where `ResizeObserver` is unavailable, the wrapper falls back to immediate render.
+**Consequence:** The charts no longer attempt to mount against invalid dimensions, which prevents the Recharts console warning instead of merely reducing its likelihood. This adds a small reusable wrapper component and a bit of mount indirection, but keeps chart logging clean and layout behavior deterministic.

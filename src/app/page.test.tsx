@@ -240,15 +240,17 @@ describe("Epic 3 dashboard", () => {
     expect(within(sector).getByText("No data")).toBeInTheDocument();
   });
 
-  it("updates only the line chart selected year when the trend slider changes", async () => {
+  it("updates the line chart progressively with slider steppers", async () => {
     mockFetch();
 
     renderDashboard();
 
     const trend = await screen.findByRole("region", { name: /emissions trend/i });
-    const slider = await within(trend).findByRole("slider", { name: /trend timeline year/i });
+    expect(await within(trend).findByText(/selected year: 2022/i)).toBeInTheDocument();
 
-    fireEvent.change(slider, { target: { value: "2019" } });
+    fireEvent.click(within(trend).getByRole("button", { name: /previous trend year/i }));
+    fireEvent.click(within(trend).getByRole("button", { name: /previous trend year/i }));
+    fireEvent.click(within(trend).getByRole("button", { name: /previous trend year/i }));
 
     await waitFor(() => {
       expect(within(trend).getByText(/selected year: 2019/i)).toBeInTheDocument();
@@ -257,6 +259,7 @@ describe("Epic 3 dashboard", () => {
       ).toBeInTheDocument();
     });
 
-    expect(replaceMock).not.toHaveBeenCalledWith("/?sectorYear=2019&mapYear=2019", { scroll: false });
+    expect(within(trend).getByRole("button", { name: /previous trend year/i })).toBeDisabled();
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 });

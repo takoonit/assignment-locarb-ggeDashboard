@@ -7,13 +7,13 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { memo, useMemo } from "react";
 import { ChartEmpty } from "@/components/dashboard/chart-card";
+import { MeasuredResponsiveContainer } from "@/components/dashboard/measured-responsive-container";
 import type { SectorData } from "@/lib/dashboard-types";
 import { SECTOR_KEYS, SECTOR_LABELS, formatNumber } from "@/lib/dashboard-types";
 import { cohereTokens } from "@/theme";
@@ -58,7 +58,7 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
         Comparing reported sector emissions shares for {data.country.name} in {data.year}.
       </Typography>
       <Box sx={{ height: { xs: 230, md: 128 }, flexShrink: 0, width: "100%" }}>
-        <ResponsiveContainer height="100%" width="100%" minHeight={128}>
+        <MeasuredResponsiveContainer minHeight={128}>
           <BarChart
             data={values}
             layout="vertical"
@@ -106,7 +106,7 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
               ))}
             </Bar>
           </BarChart>
-        </ResponsiveContainer>
+        </MeasuredResponsiveContainer>
       </Box>
       <Box
         aria-label="Sector values"
