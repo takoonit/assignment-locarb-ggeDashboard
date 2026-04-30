@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { memo, useMemo } from "react";
+import type { RectangleProps } from "recharts";
 import { ChartEmpty } from "@/components/dashboard/chart-card";
 import { MeasuredResponsiveContainer } from "@/components/dashboard/measured-responsive-container";
 import type { SectorData } from "@/lib/dashboard-types";
@@ -25,6 +26,44 @@ type SectorChartProps = {
 
 const CHART_MARGIN = { bottom: 4, left: 12, right: 56, top: 4 };
 const AXIS_TICK = { fill: cohereTokens.colors.slate, fontSize: cohereTokens.typography.micro.fontSize };
+
+/** Minimum bar width in px for 0 / null values so they remain visible. */
+const MIN_BAR_PX = 4;
+
+/**
+ * Custom bar shape that enforces a minimum width for zero/null-valued sectors
+ * so the bar is always visible and the layout never collapses.
+ */
+function SectorBarShape(props: RectangleProps & { value?: number; payload?: { value: number | null } }) {
+  const { x = 0, y = 0, width = 0, height = 0, payload } = props;
+  const rawValue = payload?.value;
+  const isNull = rawValue === null;
+  const isZero = rawValue === 0;
+  const needsMinWidth = (isNull || isZero) && width < MIN_BAR_PX;
+  const effectiveWidth = needsMinWidth ? MIN_BAR_PX : width;
+
+  const fill = isNull ? cohereTokens.colors.softEarth : cohereTokens.colors.primary;
+  const stroke = isNull ? cohereTokens.colors.hairline : isZero ? cohereTokens.colors.slate : cohereTokens.colors.primary;
+  const strokeDasharray = isNull ? "3 3" : undefined;
+  const opacity = isNull ? 0.6 : isZero ? 0.45 : 1;
+  const radius = 4;
+
+  return (
+    <rect
+      x={x}
+      y={y}
+      width={effectiveWidth}
+      height={height}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={isNull || isZero ? 1 : 0}
+      strokeDasharray={strokeDasharray}
+      opacity={opacity}
+      rx={radius}
+      ry={radius}
+    />
+  );
+}
 
 export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }: SectorChartProps) {
   const values = useMemo(
@@ -52,10 +91,13 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
     return <ChartEmpty message={message} />;
   }
 
+  const allZero = values.every((item) => item.value === 0);
+
   return (
     <Stack spacing={cohereTokens.spacing.sm} sx={{ height: "100%", minHeight: 0 }}>
       <Typography color="text.secondary" sx={{ fontSize: cohereTokens.typography.micro.fontSize }}>
         Comparing reported sector emissions shares for {data.country.name} in {data.year}.
+        {allZero && " All sectors report 0\u2009% share."}
       </Typography>
       <Box sx={{ height: { xs: 230, md: 128 }, flexShrink: 0, width: "100%" }}>
         <MeasuredResponsiveContainer minHeight={128}>
@@ -86,7 +128,12 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
                 <SectorTooltip {...props} countryName={data.country.name} year={data.year} />
               )}
             />
-            <Bar barSize={22} dataKey="chartValue" isAnimationActive={false} radius={[0, 4, 4, 0]}>
+            <Bar
+              barSize={22}
+              dataKey="chartValue"
+              isAnimationActive={false}
+              shape={<SectorBarShape />}
+            >
               <LabelList
                 dataKey="displayValue"
                 position="right"
@@ -96,14 +143,6 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
                   fontFamily: cohereTokens.font.mono,
                 }}
               />
-              {values.map((item) => (
-                <Cell
-                  fill={item.value === null ? cohereTokens.colors.softEarth : cohereTokens.colors.primary}
-                  key={item.key}
-                  stroke={item.value === null ? cohereTokens.colors.hairline : cohereTokens.colors.primary}
-                  strokeDasharray={item.value === null ? "3 3" : undefined}
-                />
-              ))}
             </Bar>
           </BarChart>
         </MeasuredResponsiveContainer>
@@ -133,7 +172,11 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
             </Typography>
             <Typography
               sx={{
-                color: item.value === null ? cohereTokens.colors.bodyMuted : cohereTokens.colors.ink,
+                color: item.value === null
+                  ? cohereTokens.colors.bodyMuted
+                  : item.value === 0
+                    ? cohereTokens.colors.slate
+                    : cohereTokens.colors.ink,
                 fontFamily: cohereTokens.font.mono,
                 fontSize: cohereTokens.typography.micro.fontSize,
                 ml: cohereTokens.spacing.md,
