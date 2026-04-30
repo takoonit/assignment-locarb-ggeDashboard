@@ -40,16 +40,52 @@ const styles = StyleSheet.create({
     right: 40,
     textAlign: "center",
   },
+  table: {
+    display: "flex",
+    flexDirection: "column",
+    marginTop: 20,
+    width: "100%",
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottom: "1pt solid #eef2ef",
+    paddingVertical: 6,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    borderBottom: "2pt solid #d8dedb",
+    paddingVertical: 8,
+    backgroundColor: "#fafaf8",
+  },
+  tableCell: {
+    flex: 1,
+    fontSize: 10,
+    color: "#404b48",
+    paddingHorizontal: 8,
+  },
+  tableCellHeader: {
+    flex: 1,
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#10231f",
+    paddingHorizontal: 8,
+  },
 });
+
+export type PdfTableData = {
+  headers: string[];
+  rows: string[][];
+};
 
 type ChartPdfProps = {
   imageData: string;
   subtitle: string;
   timestamp: string;
   title: string;
+  tableData?: PdfTableData;
 };
 
-export function ChartPdfDocument({ imageData, subtitle, timestamp, title }: ChartPdfProps) {
+export function ChartPdfDocument({ imageData, subtitle, timestamp, title, tableData }: ChartPdfProps) {
   return (
     <Document title={`${title} - Lo-Carb Export`}>
       <Page size="A4" style={styles.page}>
@@ -67,7 +103,28 @@ export function ChartPdfDocument({ imageData, subtitle, timestamp, title }: Char
           <Image src={imageData} style={styles.chartImage} />
         </View>
 
-        <View style={styles.footer}>
+        {tableData && (
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              {tableData.headers.map((header, i) => (
+                <Text key={i} style={styles.tableCellHeader}>
+                  {header}
+                </Text>
+              ))}
+            </View>
+            {tableData.rows.map((row, i) => (
+              <View key={i} style={styles.tableRow}>
+                {row.map((cell, j) => (
+                  <Text key={j} style={styles.tableCell}>
+                    {cell}
+                  </Text>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        <View style={styles.footer} fixed>
           <Text>Exported on {timestamp} · Data provided by Lo-Carb GGE Dashboard</Text>
         </View>
       </Page>

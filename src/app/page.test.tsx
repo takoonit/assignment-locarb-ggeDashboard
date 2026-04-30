@@ -238,9 +238,23 @@ describe("Epic 3 dashboard", () => {
     expect(within(sector).getAllByText("0%").length).toBeGreaterThan(0);
     expect(within(sector).getAllByText("Electricity").length).toBeGreaterThan(0);
     expect(within(sector).getByText("No data")).toBeInTheDocument();
-  });
+    });
 
-  it("updates the line chart progressively with slider steppers", async () => {
+    it("provides export buttons for trend, sector, and map charts", async () => {
+    mockFetch();
+    renderDashboard();
+
+    const trend = await screen.findByRole("region", { name: /emissions trend/i });
+    const sector = screen.getByRole("region", { name: /sector breakdown/i });
+    const map = screen.getByRole("region", { name: /world emissions map/i });
+
+    expect(within(trend).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+    expect(within(sector).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+    expect(within(map).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+    });
+
+    it("updates the line chart progressively with slider steppers", async () => {
+
     mockFetch();
 
     renderDashboard();

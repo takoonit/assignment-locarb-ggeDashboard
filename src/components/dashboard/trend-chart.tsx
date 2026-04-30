@@ -160,6 +160,7 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
       ) : null}
       {minYear !== undefined && maxYear !== undefined ? (
         <Box
+          className="chart-export-exclude"
           sx={{
             bgcolor: "rgba(240,238,231,0.7)",
             border: `1px solid ${cohereTokens.colors.cardBorder}`,

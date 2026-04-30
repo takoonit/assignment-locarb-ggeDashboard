@@ -1,10 +1,11 @@
 "use client";
 
 import { Box, Stack, Typography } from "@mui/material";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { ChartCard, ChartEmpty, ChartError, ChartSkeleton } from "@/components/dashboard/chart-card";
 import { CountrySelect, GasControl, YearSelect } from "@/components/dashboard/controls";
+import { ExportButton } from "@/components/dashboard/export-button";
 import { SectorChart } from "@/components/dashboard/sector-chart";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { WorldMap } from "@/components/dashboard/world-map";
@@ -17,7 +18,7 @@ import {
   useTrendData,
 } from "@/hooks/use-dashboard-data";
 import type { CountryOption, Gas } from "@/lib/dashboard-types";
-import { gasLabel, isGas } from "@/lib/dashboard-types";
+import { formatNumber, formatUnit, gasLabel, isGas, SECTOR_KEYS, SECTOR_LABELS } from "@/lib/dashboard-types";
 import { cohereTokens } from "@/theme";
 
 const DEFAULT_COUNTRY = "THA";
@@ -28,6 +29,10 @@ export function DashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const trendRef = useRef<HTMLDivElement>(null);
+  const sectorRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   const initialCountry = sanitizeCountry(searchParams.get("country"));
   const initialSectorYear = sanitizeYear(searchParams.get("sectorYear") ?? searchParams.get("year"));
@@ -74,7 +79,44 @@ export function DashboardPage() {
   const sector = useSectorData(country, effectiveSectorYear);
   const map = useMapData(effectiveMapYear, gas);
 
-  const query = useMemo(
+  const trendTableData = useMemo(() => {
+    if (!trend.data) return undefined;
+    const unitLabel = formatUnit(trend.data.unit);
+    // Reverse so latest years are at the top
+    const rows = [...trend.data.points].reverse().map((p) => [
+      p.year.toString(),
+      p.value === null ? "No data" : `${formatNumber(p.value)} ${unitLabel}`,
+    ]);
+    return {
+      headers: ["Year", "Emissions"],
+      rows,
+    };
+  }, [trend.data]);
+
+  const sectorTableData = useMemo(() => {
+    if (!sector.data) return undefined;
+    const unitLabel = formatUnit(sector.data.unit);
+    
+    const sortedSectors = SECTOR_KEYS.map((key) => ({
+      name: SECTOR_LABELS[key],
+      value: sector.data!.sectors[key],
+    })).sort((a, b) => {
+      if (a.value === null && b.value === null) return 0;
+      if (a.value === null) return 1;
+      if (b.value === null) return -1;
+      return b.value - a.value;
+    });
+
+    const rows = sortedSectors.map((s) => [
+      s.name,
+      s.value === null ? "No data" : `${formatNumber(s.value)}${unitLabel}`,
+    ]);
+
+    return {
+      headers: ["Sector", "Share"],
+      rows,
+    };
+  }, [sector.data]);  const query = useMemo(
     () => ({ country, sectorYear: effectiveSectorYear, mapYear: effectiveMapYear, gas }),
     [country, effectiveSectorYear, effectiveMapYear, gas],
   );
@@ -172,15 +214,41 @@ export function DashboardPage() {
             <ChartCard
               title="Emissions trend"
               subtitle={`${selectedCountryName} · ${gasLabel(gas)} · Full available range`}
+              controls={
+                <ExportButton
+                  filename={`trend-${country}-${gas}`}
+                  nodeRef={trendRef}
+                  subtitle={
+                    trend.data && trend.data.points.length > 0
+                      ? `${selectedCountryName} · ${gasLabel(gas)} · ${Math.min(...trend.data.points.map((p) => p.year))}-${Math.max(...trend.data.points.map((p) => p.year))}`
+                      : `${selectedCountryName} · ${gasLabel(gas)} · Historical emissions trend`
+                  }
+                  title="Emissions Trend"
+                  tableData={trendTableData}
+                />
+              }
             >
-              {renderTrend()}
+              <Box ref={trendRef} sx={{ height: "100%" }}>
+                {renderTrend()}
+              </Box>
             </ChartCard>
 
             <ChartCard
               title="Sector breakdown"
               subtitle={`${selectedCountryName} · ${effectiveSectorYear} · CO2 share of fuel combustion`}
+              controls={
+                <ExportButton
+                  filename={`sector-${country}-${effectiveSectorYear}`}
+                  nodeRef={sectorRef}
+                  subtitle={`${selectedCountryName} · ${effectiveSectorYear} · Sector breakdown`}
+                  title="Sector Breakdown"
+                  tableData={sectorTableData}
+                />
+              }
             >
-              {renderSector()}
+              <Box ref={sectorRef} sx={{ height: "100%" }}>
+                {renderSector()}
+              </Box>
             </ChartCard>
 
             <Box sx={{ gridColumn: "1 / -1", minHeight: 0 }}>
@@ -206,7 +274,9 @@ export function DashboardPage() {
                   </Stack>
                 }
               >
-                {renderMap()}
+                <Box ref={mapRef} sx={{ height: "100%" }}>
+                  {renderMap()}
+                </Box>
               </ChartCard>
             </Box>
           </Box>
