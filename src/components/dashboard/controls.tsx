@@ -133,12 +133,17 @@ export function YearSelect({ id, label, ariaLabel = label, value, years, onChang
       {snapped ? (
         <Typography
           sx={{
-            color: cohereTokens.colors.bodyMuted,
-            fontSize: cohereTokens.typography.micro.fontSize,
-            mt: cohereTokens.spacing.tiny,
+            color: cohereTokens.colors.slate,
+            fontFamily: cohereTokens.font.mono,
+            fontSize: 11,
+            letterSpacing: "0.02em",
+            lineHeight: 1.2,
+            maxWidth: 118,
+            mt: "2px",
+            opacity: 0.72,
           }}
         >
-          Nearest available year shown
+          Showing nearest available year
         </Typography>
       ) : null}
     </FormControl>
