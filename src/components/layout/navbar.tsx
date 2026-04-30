@@ -4,10 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Box, Container, Stack, Typography, Button, IconButton, Tooltip } from "@mui/material";
-import AutoGraphIcon from "@mui/icons-material/AutoGraph";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import LogoutIcon from "@mui/icons-material/Logout";
-import DescriptionIcon from "@mui/icons-material/Description";
+import { Activity, ShieldCheck, LogOut, FileText } from "lucide-react";
 import { cohereTokens } from "@/theme";
 
 export function Navbar() {
@@ -16,6 +13,10 @@ export function Navbar() {
 
   const loading = status === "loading";
   const isAdmin = status === "authenticated" && session?.user.role === "ADMIN";
+
+  if (pathname === "/auth/signin") {
+    return null;
+  }
 
   return (
     <Box
@@ -53,7 +54,7 @@ export function Navbar() {
                   width: 24,
                 }}
               >
-                <AutoGraphIcon sx={{ fontSize: 16 }} />
+                <Activity size={16} />
               </Box>
               <Typography
                 variant="h1"
@@ -101,26 +102,22 @@ export function Navbar() {
             >
               <Tooltip title="API Docs">
                 <IconButton aria-label="Open API docs" component={Link} href="/api/docs" size="small">
-                  <DescriptionIcon
-                    sx={{
-                      fontSize: 18,
-                      color: pathname.startsWith("/api/docs")
-                        ? cohereTokens.colors.primary
-                        : cohereTokens.colors.muted,
-                    }}
+                  <FileText
+                    size={18}
+                    color={pathname.startsWith("/api/docs")
+                      ? cohereTokens.colors.primary
+                      : cohereTokens.colors.muted}
                   />
                 </IconButton>
               </Tooltip>
               {isAdmin && (
                 <Tooltip title="Admin Dashboard">
                   <IconButton aria-label="Admin Dashboard" component={Link} href="/admin" size="small">
-                    <AdminPanelSettingsIcon
-                      sx={{
-                        fontSize: 18,
-                        color: pathname.startsWith("/admin")
-                          ? cohereTokens.colors.primary
-                          : cohereTokens.colors.muted,
-                      }}
+                    <ShieldCheck
+                      size={18}
+                      color={pathname.startsWith("/admin")
+                        ? cohereTokens.colors.primary
+                        : cohereTokens.colors.muted}
                     />
                   </IconButton>
                 </Tooltip>
@@ -187,7 +184,7 @@ export function Navbar() {
                       size="small"
                       sx={{ display: { xs: "flex", sm: "none" } }}
                     >
-                      <LogoutIcon sx={{ fontSize: 18 }} />
+                      <LogOut size={18} />
                     </IconButton>
                   </Tooltip>
                 )}

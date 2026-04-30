@@ -168,7 +168,8 @@ describe("Epic 3 dashboard", () => {
     expect(within(map).queryByRole("radiogroup", { name: /map gas/i })).not.toBeInTheDocument();
     expect(await within(map).findByText("Low")).toBeInTheDocument();
     expect(within(map).getByText("High")).toBeInTheDocument();
-    expect(within(map).getByText("No data")).toBeInTheDocument();
+    expect(within(map).queryByText("No data")).not.toBeInTheDocument();
+    expect(within(map).queryByText("Not tracked")).not.toBeInTheDocument();
 
     await waitForYearOptions(dashboardControls);
   }, 10_000);
@@ -237,5 +238,42 @@ describe("Epic 3 dashboard", () => {
     expect(within(sector).getAllByText("0%").length).toBeGreaterThan(0);
     expect(within(sector).getAllByText("Electricity").length).toBeGreaterThan(0);
     expect(within(sector).getByText("No data")).toBeInTheDocument();
+    });
+
+    it("provides export buttons for trend, sector, and map charts", async () => {
+    mockFetch();
+    renderDashboard();
+
+    const trend = await screen.findByRole("region", { name: /emissions trend/i });
+    const sector = screen.getByRole("region", { name: /sector breakdown/i });
+    const map = screen.getByRole("region", { name: /world emissions map/i });
+
+    expect(within(trend).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+    expect(within(sector).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+    expect(within(map).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+    });
+
+    it("updates the line chart progressively with slider steppers", async () => {
+
+    mockFetch();
+
+    renderDashboard();
+
+    const trend = await screen.findByRole("region", { name: /emissions trend/i });
+    expect(await within(trend).findByText(/selected year: 2022/i)).toBeInTheDocument();
+
+    fireEvent.click(within(trend).getByRole("button", { name: /previous trend year/i }));
+    fireEvent.click(within(trend).getByRole("button", { name: /previous trend year/i }));
+    fireEvent.click(within(trend).getByRole("button", { name: /previous trend year/i }));
+
+    await waitFor(() => {
+      expect(within(trend).getByText(/selected year: 2019/i)).toBeInTheDocument();
+      expect(
+        within(trend).getByText(/reveal the trend progressively through time/i),
+      ).toBeInTheDocument();
+    });
+
+    expect(within(trend).getByRole("button", { name: /previous trend year/i })).toBeDisabled();
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 });

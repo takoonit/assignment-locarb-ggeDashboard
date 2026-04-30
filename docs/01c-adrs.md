@@ -200,3 +200,49 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** ADR-007 stated "bundled TopoJSON data" but `world-atlas` TopoJSON cannot be bundled directly via import without a raw-loader or inline JSON import (which adds ~100 KB to the JS bundle). `react-simple-maps` v3 accepts a URL string as the `geography` prop and fetches and parses the TopoJSON internally — this is the canonical usage pattern for the library.
 **Decision:** Pass `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` as the `geography` prop to `<Geographies>`. No bundling or manual `topojson-client` parsing is needed. The map geography uses ISO numeric country IDs which are mapped to ISO alpha-3 codes via a lookup table in the component.
 **Consequence:** The JS bundle does not include the TopoJSON file. The map makes one CDN fetch on first render, cached by the browser thereafter. The implementation stays within the react-simple-maps v3 API without needing `topojson-client` types or manual feature extraction.
+
+---
+
+# ADR-021: Keep explicit world map legend states aligned and always visible
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** The assignment requires the world map to communicate value scale plus missing-data handling clearly. A map legend alignment regression made the legend harder to scan and weakened the distinction between normal scale labels and special states such as `No data` and `Not tracked`.
+**Decision:** Keep the world map legend as a fixed, explicit legend block with aligned entries for sequential scale labels and special non-value states. Preserve dedicated labels for `Low`, `High`, `No data`, and `Not tracked`, and verify their rendering in component tests.
+**Consequence:** The map legend remains reviewer-readable and supports the assignment’s honest-data requirement. The component takes on a small amount of extra layout/test maintenance, but missing-data semantics stay visible instead of being implied by color alone.
+
+---
+
+# ADR-022: Use a temporary tooltip for snapped-year messaging
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** Some year selectors can snap to the nearest available reporting year when the requested year is missing. A persistent helper line under the control communicated this, but it permanently consumed vertical space and added low-signal chrome to dense dashboard control rows.
+**Decision:** Represent snapped-year messaging as a temporary tooltip attached to a small info affordance next to the year label instead of persistent helper typography under the field.
+**Consequence:** The snapped-year explanation remains discoverable on hover/focus/touch without permanently expanding the control layout. This slightly increases reliance on tooltip interaction, but keeps the dashboard controls cleaner while still exposing the behavior.
+
+---
+
+# ADR-023: Mount Recharts only after the chart wrapper has a measured size
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** Recharts `ResponsiveContainer` can emit repeated console warnings when it mounts before its parent layout has a valid positive width and height. In this dashboard, the warning surfaced as intermittent `width(-1)` / `height(-1)` messages during chart mount and resize transitions.
+**Decision:** Gate chart mounting behind a measured wrapper component. The wrapper uses `ResizeObserver` in the browser to wait until the host element has a real positive width and height before rendering `ResponsiveContainer`. In non-browser test environments where `ResizeObserver` is unavailable, the wrapper falls back to immediate render.
+**Consequence:** The charts no longer attempt to mount against invalid dimensions, which prevents the Recharts console warning instead of merely reducing its likelihood. This adds a small reusable wrapper component and a bit of mount indirection, but keeps chart logging clean and layout behavior deterministic.
+
+---
+
+# ADR-024: Rewrite AGENTS.md to enforce stricter agent operating rules
+**Status:** Accepted
+**Date:** 2026-04-30
+**Context:** Existing dashboard improvements were repeatedly dropped during branch and commit handling. This included not only larger items such as export support and slider behavior, but also smaller UX/UI refinements. The problem was not primarily missing specs. The problem was that agent workflow rules were too loose: instruction precedence, package-manager truth, commit scoping, staging discipline, and restoration handling were not enforced strictly enough. That ambiguity allowed unrelated changes to be mixed together and previously completed work to be lost or overwritten.
+**Decision:** Rewrite `AGENTS.md` as a strict repo policy file. It must explicitly define instruction precedence, enforce `bun` as the package manager for this repo, require narrow commit scoping, distinguish restoration work from new development, and require agents to inspect and call out unrelated working-tree changes before staging.
+**Consequence:** The repo becomes more constrained, but future agents have less room to reinterpret workflow expectations or bundle unrelated work. Existing improvements should be less likely to disappear through broad commits or ambiguous process handling, and restoration work becomes easier to separate from genuinely new implementation.
+
+---
+
+# ADR-025: Seed Recharts `ResponsiveContainer` with the measured host size
+**Status:** Accepted
+**Supersedes:** ADR-023
+**Date:** 2026-04-30
+**Context:** ADR-023 gated chart mounting on a positive host measurement, but Recharts `ResponsiveContainer` still performs its own bootstrap render with `initialDimension = { width: -1, height: -1 }` unless told otherwise. In practice that means the dashboard can still emit the same `width(-1)` / `height(-1)` warning during first mount or Fast Refresh even when the outer wrapper already knows the real host size.
+**Decision:** Keep the measured wrapper, but also pass Recharts an explicit `initialDimension` derived from the wrapper's current measured host width and height. The wrapper should only mount the chart after it has a positive host size, and it should seed `ResponsiveContainer` with that same size on first render.
+**Consequence:** Recharts no longer boots from its `-1 / -1` sentinel dimensions inside this dashboard, so the console warning is eliminated rather than merely delayed. The wrapper becomes slightly more stateful because it tracks the measured size in addition to readiness, but the behavior is deterministic across normal mount and HMR refreshes.

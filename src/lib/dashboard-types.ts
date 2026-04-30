@@ -28,6 +28,26 @@ export type TrendData = {
   points: TrendPoint[];
 };
 
+// Fills in missing years with empty values so the chart shows gaps instead of connecting dots across missing data.
+export function normalizeTrendPoints(points: TrendPoint[]) {
+  if (points.length <= 1) return points;
+
+  const valueByYear = new Map(points.map((point) => [point.year, point.value]));
+  const years = points.map((point) => point.year);
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+  const normalized: TrendPoint[] = [];
+
+  for (let year = minYear; year <= maxYear; year++) {
+    normalized.push({
+      year,
+      value: valueByYear.has(year) ? (valueByYear.get(year) ?? null) : null,
+    });
+  }
+
+  return normalized;
+}
+
 export const SECTOR_KEYS = [
   "transport",
   "manufacturing",

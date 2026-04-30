@@ -27,7 +27,14 @@ type TooltipState = {
   y: number;
   name: string;
   value: number | null;
+  status: MapStatus;
 } | null;
+
+type MapStatus = "tracked" | "no-data" | "not-tracked";
+
+const TRACKED_SCALE_COLORS = ["#d6eef7", "#73b7d6", "#f3d98b", "#e58b3a", "#a63d1f"] as const;
+const NO_DATA_COLOR = "#c4cdc8";
+const NOT_TRACKED_COLOR = "#ede5d8";
 
 // ISO numeric (3-digit, zero-padded) → ISO alpha-3
 const NUM_TO_A3: Record<string, string> = {
@@ -102,14 +109,13 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
                 const code = NUM_TO_A3[numId] ?? "";
                 const country = code ? byCode.get(code) : undefined;
                 const value = country?.value ?? null;
+                const status = getMapStatus(country, value);
                 const selected = selectedCountry === code;
                 const displayName = (country?.countryName ?? geo.properties?.name ?? code) || "Unknown";
 
                 return (
                   <Geography
-                    aria-label={`${displayName}: ${
-                      value === null ? "No data" : `${formatCompact(value)} ${formatUnit(data.unit)}`
-                    }`}
+                    aria-label={`${displayName}: ${formatMapAriaLabel(status, value, data.unit)}`}
                     geography={geo}
                     key={geo.rsmKey}
                     onClick={() => {
@@ -117,7 +123,7 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
                     }}
                     onMouseEnter={(evt: React.MouseEvent) => {
                       const { x, y } = positionFromEvent(evt);
-                      setTooltip({ x, y, name: displayName, value });
+                      setTooltip({ x, y, name: displayName, status, value });
                     }}
                     onMouseMove={(evt: React.MouseEvent) => {
                       const { x, y } = positionFromEvent(evt);
@@ -127,7 +133,7 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
                     role="button"
                     style={{
                       default: {
-                        fill: colorForValue(value, min, max, data.gas, !!country),
+                        fill: colorForValue(value, min, max, status),
                         outline: "none",
                         stroke: selected ? cohereTokens.colors.actionBlue : cohereTokens.colors.canvas,
                         strokeWidth: selected ? 1.8 : 0.5,
@@ -169,13 +175,14 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
             x={tooltip.x}
             y={tooltip.y}
             name={tooltip.name}
+            status={tooltip.status}
             value={tooltip.value}
             year={data.year}
           />
         ) : null}
 
       </Box>
-      <MapLegend max={max} min={min} />
+      <MapLegend max={max} min={min} year={data.year} />
     </Stack>
   );
 }
@@ -183,6 +190,7 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
 function MapTooltip({
   gas,
   name,
+  status,
   unit,
   value,
   x,
@@ -191,6 +199,7 @@ function MapTooltip({
 }: {
   gas: Gas;
   name: string;
+  status: MapStatus;
   unit: string;
   value: number | null;
   x: number;
@@ -222,56 +231,71 @@ function MapTooltip({
         color="text.secondary"
         sx={{ fontSize: cohereTokens.typography.micro.fontSize, lineHeight: 1.4 }}
       >
-        {year} {gasLabel(gas)}:{" "}
-        {value === null ? "No data" : `${formatNumber(value)} ${unit}`}
+        {year} {gasLabel(gas)}: {formatMapTooltipLabel(status, value, unit)}
       </Typography>
     </Paper>
   );
 }
 
-function colorForValue(value: number | null, min: number, max: number, gas: Gas, tracked: boolean) {
-  if (!tracked) return cohereTokens.colors.softEarth;
-  // Distinct no-data color: muted slate, clearly different from scale steps
-  if (value === null) return "#c8d4d0";
-  if (max <= min) return cohereTokens.colors.actionBlue;
+function getMapStatus(
+  country: MapData["countries"][number] | undefined,
+  value: number | null,
+): MapStatus {
+  if (!country) return "not-tracked";
+  if (value === null) return "no-data";
+  return "tracked";
+}
+
+function formatMapAriaLabel(status: MapStatus, value: number | null, unit: string) {
+  if (status === "not-tracked") return "Not in dataset";
+  if (status === "no-data") return "No reported emissions";
+  return `${formatCompact(value)} ${formatUnit(unit)}`;
+}
+
+function formatMapTooltipLabel(status: MapStatus, value: number | null, unit: string) {
+  if (status === "not-tracked") return "Not in dataset";
+  if (status === "no-data") return "No reported emissions";
+  return `${formatNumber(value)} ${unit}`;
+}
+
+function colorForValue(value: number | null, min: number, max: number, status: MapStatus) {
+  if (status === "not-tracked") return NOT_TRACKED_COLOR;
+  if (status === "no-data") return NO_DATA_COLOR;
+  if (max <= min) return TRACKED_SCALE_COLORS[2];
 
   const ratio = (value - min) / (max - min);
-  // Five-step sequential scale — lowest step is visibly different from null gray
-  if (ratio > 0.8) return cohereTokens.colors.forestGreen;
-  if (ratio > 0.6) return cohereTokens.colors.primary;
-  if (ratio > 0.4) return cohereTokens.colors.actionBlue;
-  if (ratio > 0.2) return gas === "TOTAL" ? cohereTokens.colors.slate : cohereTokens.colors.warningAmber;
-  return "#a8c5be"; // low but tracked — visibly lighter than null gray
+
+  if (ratio > 0.8) return TRACKED_SCALE_COLORS[4];
+  if (ratio > 0.6) return TRACKED_SCALE_COLORS[3];
+  if (ratio > 0.4) return TRACKED_SCALE_COLORS[2];
+  if (ratio > 0.2) return TRACKED_SCALE_COLORS[1];
+  return TRACKED_SCALE_COLORS[0];
 }
 
 function MapLegend({
   max,
   min,
+  year,
 }: {
   max: number;
   min: number;
+  year: number;
 }) {
   return (
     <Box
       sx={{
         alignItems: "center",
         display: "flex",
+        gap: 2,
         flexShrink: 0,
         flexWrap: "wrap",
-        gap: 1.25,
-        justifyContent: "flex-end",
+        justifyContent: "space-between",
       }}
     >
       <Box sx={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 1 }}>
         <Typography variant="caption">Low</Typography>
         <Box sx={{ display: "flex" }}>
-          {[
-            "#a8c5be",
-            cohereTokens.colors.slate,
-            cohereTokens.colors.actionBlue,
-            cohereTokens.colors.primary,
-            cohereTokens.colors.forestGreen,
-          ].map((color) => (
+          {TRACKED_SCALE_COLORS.map((color) => (
             <Box key={color} sx={{ bgcolor: color, height: 10, width: 24 }} />
           ))}
         </Box>
@@ -279,24 +303,33 @@ function MapLegend({
         <Typography color="text.secondary" variant="caption">
           {formatCompact(min)} - {formatCompact(max)}
         </Typography>
+      </Box>
+      <Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
         <Box
           sx={{
-            bgcolor: "#c8d4d0",
+            bgcolor: NO_DATA_COLOR,
+            border: `1px solid ${cohereTokens.colors.hairline}`,
+            borderRadius: 0.5,
             height: 10,
-            ml: 1,
-            width: 18,
+            width: 14,
           }}
         />
-        <Typography variant="caption">No data</Typography>
+        <Typography color="text.secondary" variant="caption">
+          No reported emissions ({year})
+        </Typography>
         <Box
           sx={{
-            bgcolor: cohereTokens.colors.softEarth,
+            bgcolor: NOT_TRACKED_COLOR,
+            border: `1px solid ${cohereTokens.colors.hairline}`,
+            borderRadius: 0.5,
             height: 10,
             ml: 0.5,
-            width: 18,
+            width: 14,
           }}
         />
-        <Typography variant="caption">Not tracked</Typography>
+        <Typography color="text.secondary" variant="caption">
+          Not in dataset
+        </Typography>
       </Box>
     </Box>
   );
