@@ -239,4 +239,24 @@ describe("Epic 3 dashboard", () => {
     expect(within(sector).getAllByText("Electricity").length).toBeGreaterThan(0);
     expect(within(sector).getByText("No data")).toBeInTheDocument();
   });
+
+  it("updates only the line chart selected year when the trend slider changes", async () => {
+    mockFetch();
+
+    renderDashboard();
+
+    const trend = await screen.findByRole("region", { name: /emissions trend/i });
+    const slider = await within(trend).findByRole("slider", { name: /trend timeline year/i });
+
+    fireEvent.change(slider, { target: { value: "2019" } });
+
+    await waitFor(() => {
+      expect(within(trend).getByText(/selected year: 2019/i)).toBeInTheDocument();
+      expect(
+        within(trend).getByText(/reveal the trend progressively through time/i),
+      ).toBeInTheDocument();
+    });
+
+    expect(replaceMock).not.toHaveBeenCalledWith("/?sectorYear=2019&mapYear=2019", { scroll: false });
+  });
 });

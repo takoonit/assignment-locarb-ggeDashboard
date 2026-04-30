@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import { Box, Paper, Slider, Stack, Typography } from "@mui/material";
 import {
   CartesianGrid,
   Line,
@@ -19,16 +19,27 @@ import { cohereTokens } from "@/theme";
 
 type TrendChartProps = {
   data: TrendData;
+  onYearChange?: (year: number) => void;
+  selectedYear?: number;
 };
 
 const CHART_MARGIN = { bottom: 8, left: 12, right: 20, top: 18 };
 const AXIS_TICK = { fill: cohereTokens.colors.slate, fontSize: cohereTokens.typography.micro.fontSize };
 
-export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
+export const TrendChart = memo(function TrendChart({ data, onYearChange, selectedYear }: TrendChartProps) {
   const validPoints = useMemo(
     () => data.points.filter((point) => point.value !== null),
     [data.points],
   );
+  const allYears = useMemo(() => data.points.map((point) => point.year), [data.points]);
+  const minYear = allYears.length > 0 ? Math.min(...allYears) : undefined;
+  const maxYear = allYears.length > 0 ? Math.max(...allYears) : undefined;
+  const sliderValue =
+    selectedYear && allYears.includes(selectedYear) ? selectedYear : maxYear;
+  const visiblePoints = useMemo(() => {
+    if (!sliderValue) return data.points;
+    return data.points.filter((point) => point.year <= sliderValue);
+  }, [data.points, sliderValue]);
   // Only flag a gap when the null is surrounded by valid points on both sides —
   // trailing/leading nulls don't produce a visible broken line.
   const hasMissing = useMemo(() => {
@@ -62,9 +73,9 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
 
   return (
     <Stack spacing={cohereTokens.spacing.sm} sx={{ height: "100%", minHeight: 0 }}>
-      <Box sx={{ height: { xs: 230, md: 168 }, width: "100%" }}>
+      <Box sx={{ height: { xs: 230, md: 168 }, minWidth: 0, width: "100%" }}>
         <ResponsiveContainer height="100%" width="100%" minHeight={168}>
-          <LineChart data={data.points} margin={CHART_MARGIN}>
+          <LineChart data={visiblePoints} margin={CHART_MARGIN}>
             <CartesianGrid stroke={cohereTokens.colors.cardBorder} vertical={false} />
             <XAxis dataKey="year" stroke={cohereTokens.colors.slate} tick={AXIS_TICK} />
             <YAxis
@@ -83,6 +94,7 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
               />
             ))}
             <Tooltip
+              cursor={{ stroke: cohereTokens.colors.actionBlue, strokeDasharray: "4 4" }}
               content={(props) => (
                 <TrendTooltip
                   {...props}
@@ -95,7 +107,36 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
             <Line
               connectNulls={false}
               dataKey="value"
-              dot={dot}
+              activeDot={{
+                fill: cohereTokens.colors.actionBlue,
+                r: 5,
+                stroke: cohereTokens.colors.canvas,
+                strokeWidth: 2,
+              }}
+              dot={(props) => {
+                const pointYear = Number((props as { payload?: { year?: number } }).payload?.year);
+                if (selectedYear && pointYear === selectedYear) {
+                  return (
+                    <circle
+                      cx={props.cx}
+                      cy={props.cy}
+                      fill={cohereTokens.colors.actionBlue}
+                      r={5}
+                      stroke={cohereTokens.colors.canvas}
+                      strokeWidth={2}
+                    />
+                  );
+                }
+
+                return (
+                  <circle
+                    cx={props.cx}
+                    cy={props.cy}
+                    fill={cohereTokens.colors.primary}
+                    r={dot.r}
+                  />
+                );
+              }}
               isAnimationActive={false}
               name={gasLabel(data.gas)}
               stroke={cohereTokens.colors.primary}
@@ -115,6 +156,81 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
           Only {validPoints.length === 1 ? "one data point is" : "two data points are"} available
           for this selection.
         </Typography>
+      ) : null}
+      {minYear !== undefined && maxYear !== undefined ? (
+        <Box
+          sx={{
+            bgcolor: "rgba(240,238,231,0.7)",
+            border: `1px solid ${cohereTokens.colors.cardBorder}`,
+            borderRadius: `${cohereTokens.rounded.md}px`,
+            px: { xs: 1.5, md: 2 },
+            py: 1.25,
+          }}
+        >
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
+            <Box>
+              <Typography
+                sx={{
+                  color: cohereTokens.colors.bodyMuted,
+                  fontFamily: cohereTokens.font.mono,
+                  fontSize: 11,
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Timeline scrubber
+              </Typography>
+              <Typography sx={{ fontSize: 13, mt: 0.35 }}>
+                Drag the year slider to reveal the trend progressively through time.
+              </Typography>
+            </Box>
+            <Typography
+              sx={{
+                color: cohereTokens.colors.primary,
+                fontFamily: cohereTokens.font.mono,
+                fontSize: 12,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Selected year: {sliderValue}
+            </Typography>
+          </Stack>
+          <Slider
+            aria-label="Trend timeline year"
+            marks={[
+              { value: minYear, label: `${minYear}` },
+              { value: maxYear, label: `${maxYear}` },
+            ]}
+            max={maxYear}
+            min={minYear}
+            onChange={(_, value) => {
+              if (typeof value === "number") onYearChange?.(value);
+            }}
+            step={1}
+            sx={{
+              color: cohereTokens.colors.primary,
+              mt: 1,
+              "& .MuiSlider-markLabel": {
+                color: cohereTokens.colors.bodyMuted,
+                fontFamily: cohereTokens.font.mono,
+                fontSize: 11,
+              },
+              "& .MuiSlider-thumb": {
+                boxShadow: "0 6px 14px rgba(16,35,31,0.18)",
+              },
+              "& .MuiSlider-track": {
+                border: 0,
+              },
+              "& .MuiSlider-rail": {
+                bgcolor: cohereTokens.colors.hairline,
+                opacity: 1,
+              },
+            }}
+            value={sliderValue ?? minYear}
+            valueLabelDisplay="auto"
+          />
+        </Box>
       ) : null}
     </Stack>
   );

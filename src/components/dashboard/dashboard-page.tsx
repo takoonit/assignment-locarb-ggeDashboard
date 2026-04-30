@@ -39,6 +39,7 @@ export function DashboardPage() {
   const [country, setCountry] = useState(initialCountry);
   const [sectorYear, setSectorYear] = useState(initialSectorYear);
   const [mapYear, setMapYear] = useState(initialMapYear);
+  const [trendYear, setTrendYear] = useState(initialSectorYear);
   const [gas, setGas] = useState<Gas>(initialGas);
 
   const countries = useCountries();
@@ -222,7 +223,13 @@ export function DashboardPage() {
       return (
         <ChartEmpty message="Awaiting selection. Choose a country and gas to see historical emission trends since 1990." />
       );
-    return <TrendChart data={trend.data} />;
+    return (
+      <TrendChart
+        data={trend.data}
+        onYearChange={setTrendYear}
+        selectedYear={trendYear}
+      />
+    );
   }
 
   function renderSector() {
