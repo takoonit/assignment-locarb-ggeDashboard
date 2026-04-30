@@ -34,6 +34,20 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
   const allYears = useMemo(() => points.map((point) => point.year), [points]);
   const minYear = allYears.length > 0 ? Math.min(...allYears) : undefined;
   const maxYear = allYears.length > 0 ? Math.max(...allYears) : undefined;
+
+  const sliderMarks = useMemo(() => {
+    if (minYear === undefined || maxYear === undefined) return [];
+    const marks = [];
+    for (let year = minYear; year <= maxYear; year++) {
+      const isBoundary = year % 5 === 0 || year === minYear || year === maxYear;
+      marks.push({
+        value: year,
+        label: isBoundary ? `${year}` : undefined,
+      });
+    }
+    return marks;
+  }, [minYear, maxYear]);
+
   const [sliderValue, setSliderValue] = useState<number | undefined>(maxYear);
 
   const visiblePoints = useMemo(() => {
@@ -213,10 +227,7 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
             <Box sx={{ flex: 1 }}>
               <Slider
                 aria-label="Trend timeline year"
-                marks={[
-                  { value: minYear, label: `${minYear}` },
-                  { value: maxYear, label: `${maxYear}` },
-                ]}
+                marks={sliderMarks}
                 max={maxYear}
                 min={minYear}
                 onChange={(_, value) => {
@@ -225,6 +236,17 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
                 step={1}
                 sx={{
                   color: cohereTokens.colors.primary,
+                  "& .MuiSlider-mark": {
+                    bgcolor: cohereTokens.colors.hairline,
+                    borderRadius: "50%",
+                    height: 2,
+                    opacity: 0.7,
+                    width: 2,
+                  },
+                  "& .MuiSlider-markActive": {
+                    bgcolor: cohereTokens.colors.hairline,
+                    opacity: 0.4,
+                  },
                   "& .MuiSlider-markLabel": {
                     color: cohereTokens.colors.bodyMuted,
                     fontFamily: cohereTokens.font.mono,
@@ -240,9 +262,16 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
                     bgcolor: cohereTokens.colors.hairline,
                     opacity: 1,
                   },
+                  "& .MuiSlider-valueLabel": {
+                    bgcolor: cohereTokens.colors.primary,
+                    borderRadius: `${cohereTokens.rounded.xs}px`,
+                    fontFamily: cohereTokens.font.mono,
+                    fontSize: 12,
+                    fontWeight: 600,
+                  },
                 }}
                 value={sliderValue ?? minYear}
-                valueLabelDisplay="auto"
+                valueLabelDisplay="on"
               />
             </Box>
             <IconButton
