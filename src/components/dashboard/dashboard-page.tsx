@@ -255,7 +255,27 @@ export function DashboardPage() {
               <ChartCard
                 tall
                 title="World emissions map"
-                subtitle={`${effectiveMapYear} · ${gasLabel(gas)} emissions`}
+                subtitle={
+                  <>
+                    {effectiveMapYear} ·{" "}
+                    <Typography
+                      component="span"
+                      sx={{
+                        bgcolor: cohereTokens.colors.paleGreen,
+                        border: `1px solid ${cohereTokens.colors.borderLight}`,
+                        borderRadius: `${cohereTokens.rounded.xs}px`,
+                        fontFamily: cohereTokens.font.mono,
+                        fontSize: "inherit",
+                        fontWeight: 600,
+                        px: 0.75,
+                        py: 0.15,
+                      }}
+                    >
+                      {gasLabel(gas)}
+                    </Typography>{" "}
+                    emissions
+                  </>
+                }
                 controls={
                   <Stack
                     direction={{ xs: "column", sm: "row" }}

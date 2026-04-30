@@ -33,8 +33,8 @@ type TooltipState = {
 type MapStatus = "tracked" | "no-data" | "not-tracked";
 
 const TRACKED_SCALE_COLORS = ["#d6eef7", "#73b7d6", "#f3d98b", "#e58b3a", "#a63d1f"] as const;
-const NO_DATA_COLOR = "#e7ece9";
-const NOT_TRACKED_COLOR = "#f5f2eb";
+const NO_DATA_COLOR = "#c4cdc8";
+const NOT_TRACKED_COLOR = "#ede5d8";
 
 // ISO numeric (3-digit, zero-padded) → ISO alpha-3
 const NUM_TO_A3: Record<string, string> = {
@@ -182,7 +182,7 @@ export function WorldMap({ data, selectedCountry, onSelectCountry }: WorldMapPro
         ) : null}
 
       </Box>
-      <MapLegend max={max} min={min} />
+      <MapLegend max={max} min={min} year={data.year} />
     </Stack>
   );
 }
@@ -247,14 +247,14 @@ function getMapStatus(
 }
 
 function formatMapAriaLabel(status: MapStatus, value: number | null, unit: string) {
-  if (status === "not-tracked") return "Not tracked";
-  if (status === "no-data") return "No data";
+  if (status === "not-tracked") return "Not in dataset";
+  if (status === "no-data") return "No reported emissions";
   return `${formatCompact(value)} ${formatUnit(unit)}`;
 }
 
 function formatMapTooltipLabel(status: MapStatus, value: number | null, unit: string) {
-  if (status === "not-tracked") return "Not tracked";
-  if (status === "no-data") return "No data";
+  if (status === "not-tracked") return "Not in dataset";
+  if (status === "no-data") return "No reported emissions";
   return `${formatNumber(value)} ${unit}`;
 }
 
@@ -275,9 +275,11 @@ function colorForValue(value: number | null, min: number, max: number, status: M
 function MapLegend({
   max,
   min,
+  year,
 }: {
   max: number;
   min: number;
+  year: number;
 }) {
   return (
     <Box
@@ -300,6 +302,33 @@ function MapLegend({
         <Typography variant="caption">High</Typography>
         <Typography color="text.secondary" variant="caption">
           {formatCompact(min)} - {formatCompact(max)}
+        </Typography>
+      </Box>
+      <Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
+        <Box
+          sx={{
+            bgcolor: NO_DATA_COLOR,
+            border: `1px solid ${cohereTokens.colors.hairline}`,
+            borderRadius: 0.5,
+            height: 10,
+            width: 14,
+          }}
+        />
+        <Typography color="text.secondary" variant="caption">
+          No reported emissions ({year})
+        </Typography>
+        <Box
+          sx={{
+            bgcolor: NOT_TRACKED_COLOR,
+            border: `1px solid ${cohereTokens.colors.hairline}`,
+            borderRadius: 0.5,
+            height: 10,
+            ml: 0.5,
+            width: 14,
+          }}
+        />
+        <Typography color="text.secondary" variant="caption">
+          Not in dataset
         </Typography>
       </Box>
     </Box>

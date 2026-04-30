@@ -90,10 +90,10 @@ describe("WorldMap", () => {
       ],
     });
 
-    expect(screen.getByLabelText(/thailand: no data/i)).toHaveAttribute("fill", "#e7ece9");
-    expect(screen.getByLabelText(/unknownland: not tracked/i)).toHaveAttribute("fill", "#f5f2eb");
-    expect(screen.queryByText("No data")).not.toBeInTheDocument();
-    expect(screen.queryByText("Not tracked")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/thailand: no reported emissions/i)).toHaveAttribute("fill", "#c4cdc8");
+    expect(screen.getByLabelText(/unknownland: not in dataset/i)).toHaveAttribute("fill", "#ede5d8");
+    expect(screen.getByText("No reported emissions (2020)")).toBeInTheDocument();
+    expect(screen.getByText("Not in dataset")).toBeInTheDocument();
   });
 
   it("keeps the same tracked scale for total and non-total gases", () => {
