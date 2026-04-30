@@ -14,6 +14,10 @@ export function Navbar() {
   const loading = status === "loading";
   const isAdmin = status === "authenticated" && session?.user.role === "ADMIN";
 
+  if (pathname === "/auth/signin") {
+    return null;
+  }
+
   return (
     <Box
       component="nav"

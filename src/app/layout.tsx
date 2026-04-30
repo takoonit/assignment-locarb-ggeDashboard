@@ -28,13 +28,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={{ height: "100%", margin: 0 }}
+      className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="h-full m-0">
+      <body style={{ height: "100%", margin: 0 }}>
         <Providers>
-          <div className="flex flex-col min-h-full">
+          <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
             <Navbar />
-            <main className="flex-1 flex flex-col">
+            <main style={{ display: "flex", flexDirection: "column", flex: 1 }}>
               {children}
             </main>
           </div>
