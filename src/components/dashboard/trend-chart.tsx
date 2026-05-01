@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 import { memo, useMemo, useState } from "react";
 import { ChartEmpty } from "@/components/dashboard/chart-card";
 import { MeasuredResponsiveContainer } from "@/components/dashboard/measured-responsive-container";
@@ -109,7 +110,7 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
             ))}
             <Tooltip
               cursor={{ stroke: cohereTokens.colors.actionBlue, strokeDasharray: "4 4" }}
-              content={(props) => (
+              content={(props: TooltipProps<any, any>) => (
                 <TrendTooltip
                   {...props}
                   countryName={data.country.name}

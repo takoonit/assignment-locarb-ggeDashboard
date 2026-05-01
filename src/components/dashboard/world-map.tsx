@@ -260,7 +260,7 @@ function formatMapTooltipLabel(status: MapStatus, value: number | null, unit: st
 
 function colorForValue(value: number | null, min: number, max: number, status: MapStatus) {
   if (status === "not-tracked") return NOT_TRACKED_COLOR;
-  if (status === "no-data") return NO_DATA_COLOR;
+  if (status === "no-data" || value === null) return NO_DATA_COLOR;
   if (max <= min) return TRACKED_SCALE_COLORS[2];
 
   const ratio = (value - min) / (max - min);

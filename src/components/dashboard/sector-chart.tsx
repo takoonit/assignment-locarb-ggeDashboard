@@ -5,12 +5,12 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   LabelList,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 import { memo, useMemo } from "react";
 import type { RectangleProps } from "recharts";
 import { ChartEmpty } from "@/components/dashboard/chart-card";
@@ -124,7 +124,7 @@ export const SectorChart = memo(function SectorChart({ data, maxAvailableYear }:
             />
             <Tooltip
               cursor={{ fill: cohereTokens.colors.softEarth }}
-              content={(props) => (
+              content={(props: TooltipProps<any, any>) => (
                 <SectorTooltip {...props} countryName={data.country.name} year={data.year} />
               )}
             />

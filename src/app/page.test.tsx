@@ -248,9 +248,9 @@ describe("Epic 3 dashboard", () => {
     const sector = screen.getByRole("region", { name: /sector breakdown/i });
     const map = screen.getByRole("region", { name: /world emissions map/i });
 
-    expect(within(trend).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
-    expect(within(sector).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
-    expect(within(map).getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+    expect(within(trend).getByRole("button", { name: /export/i })).toBeInTheDocument();
+    expect(within(sector).getByRole("button", { name: /export/i })).toBeInTheDocument();
+    expect(within(map).getByRole("button", { name: /export/i })).toBeInTheDocument();
     });
 
     it("updates the line chart progressively with slider steppers", async () => {

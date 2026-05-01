@@ -29,7 +29,7 @@ export async function adminFetch<T>(path: string): Promise<T> {
   let json: ApiSuccess<T> | ApiFailure;
   try {
     json = (await response.json()) as ApiSuccess<T> | ApiFailure;
-  } catch (err) {
+  } catch {
     throw new AdminApiError("INTERNAL_ERROR", "Failed to parse response");
   }
 
@@ -59,7 +59,7 @@ export async function adminMutation<T>(
   let json: ApiSuccess<T> | ApiFailure;
   try {
     json = (await response.json()) as ApiSuccess<T> | ApiFailure;
-  } catch (err) {
+  } catch {
     throw new AdminApiError("INTERNAL_ERROR", "Failed to parse response");
   }
 
