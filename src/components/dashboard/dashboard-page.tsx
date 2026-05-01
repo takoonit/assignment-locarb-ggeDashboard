@@ -116,7 +116,29 @@ export function DashboardPage() {
       headers: ["Sector", "Share"],
       rows,
     };
-  }, [sector.data]);  const query = useMemo(
+  }, [sector.data]);
+
+  const mapTableData = useMemo(() => {
+    if (!map.data) return undefined;
+    const unitLabel = formatUnit(map.data.unit);
+    
+    const sortedCountries = [...map.data.countries]
+      .filter((c) => c.value !== null)
+      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
+      .slice(0, 20); // Top 20 for the PDF table
+
+    const rows = sortedCountries.map((c) => [
+      c.countryName,
+      `${formatNumber(c.value!)} ${unitLabel}`,
+    ]);
+
+    return {
+      headers: ["Country", `Emissions (${unitLabel})`],
+      rows,
+    };
+  }, [map.data]);
+
+  const query = useMemo(
     () => ({ country, sectorYear: effectiveSectorYear, mapYear: effectiveMapYear, gas }),
     [country, effectiveSectorYear, effectiveMapYear, gas],
   );
@@ -282,6 +304,13 @@ export function DashboardPage() {
                     spacing={cohereTokens.spacing.md}
                     sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}
                   >
+                    <ExportButton
+                      filename={`map-${effectiveMapYear}-${gas}`}
+                      nodeRef={mapRef}
+                      subtitle={`${effectiveMapYear} · ${gasLabel(gas)} · Global emissions map`}
+                      title="World Emissions Map"
+                      tableData={mapTableData}
+                    />
                     <YearSelect
                       id="map-year"
                       label="Year"

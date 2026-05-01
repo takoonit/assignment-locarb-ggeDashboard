@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, vi } from "vitest";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 // Mock next-auth/middleware
 vi.mock("next-auth/middleware", () => ({
-  withAuth: (middlewareOrOptions: any, maybeOptions: any) => {
-    let options = maybeOptions;
-    let middleware = typeof middlewareOrOptions === "function" ? middlewareOrOptions : undefined;
+  withAuth: (middlewareOrOptions: unknown, maybeOptions?: unknown) => {
+    let options = maybeOptions as any;
+    const middleware = typeof middlewareOrOptions === "function" ? middlewareOrOptions as any : undefined;
 
     if (!middleware) {
-      options = middlewareOrOptions;
+      options = middlewareOrOptions as any;
     }
 
     const wrapped = (req: any) => {
@@ -32,9 +33,9 @@ describe("middleware", () => {
         token: { role: "VIEWER" }
       },
       nextUrl: new URL("http://localhost/admin")
-    } as any;
+    };
 
-    const res = middleware(req);
+    const res = await (middleware as any)(req, {} as any);
 
     expect(res.headers.get("location")).toContain("/api/auth/signin");
   });
@@ -48,9 +49,9 @@ describe("middleware", () => {
         token: { role: "ADMIN" }
       },
       nextUrl: new URL("http://localhost/admin")
-    } as any;
+    };
 
-    const res = middleware(req);
+    const res = await (middleware as any)(req, {} as any);
 
     expect(res).toBeUndefined();
   });
@@ -64,9 +65,9 @@ describe("middleware", () => {
         token: null
       },
       nextUrl: new URL("http://localhost/admin")
-    } as any;
+    };
 
-    const res = middleware(req);
+    const res = await (middleware as any)(req, {} as any);
 
     expect(res.headers.get("location")).toContain("/api/auth/signin");
   });

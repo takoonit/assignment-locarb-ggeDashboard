@@ -83,8 +83,10 @@ export function ExportButton({
         onClose={() => setOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{
-          sx: { borderRadius: cohereTokens.rounded.md, p: 1 },
+        slotProps={{
+          paper: {
+            sx: { borderRadius: cohereTokens.rounded.md, p: 1 },
+          },
         }}
       >
         <DialogTitle sx={{ fontSize: 18, fontWeight: 600, pb: 1, textAlign: "center" }}>
