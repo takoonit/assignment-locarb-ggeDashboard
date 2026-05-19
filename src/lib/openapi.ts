@@ -91,6 +91,36 @@ const schemas = {
       other: nullableNumber,
     },
   },
+  PagedCountries: {
+    type: "object",
+    required: ["data", "total", "page", "pageSize"],
+    properties: {
+      data: { type: "array", items: { $ref: "#/components/schemas/PersistedCountry" } },
+      total: { type: "integer", minimum: 0, example: 42 },
+      page: { type: "integer", minimum: 1, example: 1 },
+      pageSize: { type: "integer", minimum: 1, maximum: 100, example: 20 },
+    },
+  },
+  PagedAnnualEmissions: {
+    type: "object",
+    required: ["data", "total", "page", "pageSize"],
+    properties: {
+      data: { type: "array", items: { $ref: "#/components/schemas/AnnualEmission" } },
+      total: { type: "integer", minimum: 0, example: 1200 },
+      page: { type: "integer", minimum: 1, example: 1 },
+      pageSize: { type: "integer", minimum: 1, maximum: 100, example: 20 },
+    },
+  },
+  PagedSectorShares: {
+    type: "object",
+    required: ["data", "total", "page", "pageSize"],
+    properties: {
+      data: { type: "array", items: { $ref: "#/components/schemas/SectorShare" } },
+      total: { type: "integer", minimum: 0, example: 900 },
+      page: { type: "integer", minimum: 1, example: 1 },
+      pageSize: { type: "integer", minimum: 1, maximum: 100, example: 20 },
+    },
+  },
   DeleteResponse: {
     type: "object",
     required: ["deleted", "id"],
@@ -322,6 +352,21 @@ const pathIdParam = (example: string) => ({
   schema: { type: "string", minLength: 1, example },
 });
 
+const adminPageParams = [
+  {
+    name: "page",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 1, default: 1 },
+  },
+  {
+    name: "pageSize",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+  },
+];
+
 export function generateOpenApiDocument(): OpenApiDocument {
   return {
     openapi: "3.1.0",
@@ -335,6 +380,7 @@ export function generateOpenApiDocument(): OpenApiDocument {
       { name: "Countries", description: "Country reference data management." },
       { name: "Emissions", description: "Annual greenhouse gas emission records and aggregated views." },
       { name: "Sector Shares", description: "Per-sector emission share records by country and year." },
+      { name: "Admin", description: "Admin-only paginated list endpoints used by the management UI." },
       { name: "Internal", description: "Meta-endpoints: OpenAPI document and interactive docs." },
     ],
     paths: {
@@ -451,8 +497,36 @@ export function generateOpenApiDocument(): OpenApiDocument {
         patch: writePath("updateSectorShare", "Sector Shares", "Update sector share record", "UpdateSectorShareBody", "SectorShare", "sector_share_id"),
         delete: deletePath("deleteSectorShare", "Sector Shares", "Delete sector share record", "sector_share_id"),
       },
+      "/api/admin/countries": {
+        get: adminPagedListPath("listAdminCountries", "List admin countries", "PagedCountries"),
+      },
+      "/api/admin/emissions": {
+        get: adminPagedListPath("listAdminEmissions", "List admin emissions records", "PagedAnnualEmissions"),
+      },
+      "/api/admin/sector-shares": {
+        get: adminPagedListPath("listAdminSectorShares", "List admin sector share records", "PagedSectorShares"),
+      },
     },
     components: { schemas },
+  };
+}
+
+function adminPagedListPath(
+  operationId: string,
+  summary: string,
+  responseName: "PagedCountries" | "PagedAnnualEmissions" | "PagedSectorShares",
+) {
+  return {
+    operationId,
+    tags: ["Admin"],
+    summary,
+    parameters: adminPageParams,
+    responses: {
+      200: success(responseName),
+      400: error("Invalid pagination parameters."),
+      401: error("Unauthenticated."),
+      403: error("Forbidden."),
+    },
   };
 }
 

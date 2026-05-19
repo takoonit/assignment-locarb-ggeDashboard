@@ -76,6 +76,9 @@ describe("generateOpenApiDocument", () => {
         "/api/emissions/filter",
         "/api/sector-shares",
         "/api/sector-shares/{id}",
+        "/api/admin/countries",
+        "/api/admin/emissions",
+        "/api/admin/sector-shares",
         "/api/openapi",
         "/api/docs",
       ]),
@@ -84,6 +87,34 @@ describe("generateOpenApiDocument", () => {
     expect(document.paths?.["/api/countries"]?.post).toBeDefined();
     expect(document.paths?.["/api/emissions/{id}"]?.patch).toBeDefined();
     expect(document.paths?.["/api/sector-shares/{id}"]?.delete).toBeDefined();
+    expect(document.paths?.["/api/admin/countries"]?.get).toBeDefined();
+    expect(document.paths?.["/api/admin/emissions"]?.get).toBeDefined();
+    expect(document.paths?.["/api/admin/sector-shares"]?.get).toBeDefined();
+  });
+
+  it("documents admin UI paginated list endpoints for Scalar", () => {
+    const document = generateOpenApiDocument();
+
+    expect(document.components?.schemas?.PagedCountries).toBeDefined();
+    expect(document.components?.schemas?.PagedAnnualEmissions).toBeDefined();
+    expect(document.components?.schemas?.PagedSectorShares).toBeDefined();
+    expect(document.paths?.["/api/admin/countries"]?.get).toMatchObject({
+      operationId: "listAdminCountries",
+      tags: ["Admin"],
+      responses: {
+        200: expect.any(Object),
+        401: expect.any(Object),
+        403: expect.any(Object),
+      },
+    });
+    expect(parameter("/api/admin/countries", "page").schema).toMatchObject({
+      default: 1,
+      minimum: 1,
+    });
+    expect(parameter("/api/admin/countries", "pageSize").schema).toMatchObject({
+      default: 20,
+      maximum: 100,
+    });
   });
 
   it("keeps null-preserving response schemas explicit", () => {

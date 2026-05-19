@@ -378,6 +378,109 @@ Admin APIs change data. They require login and admin role.
 Plain rule:
 - public visitors can read data
 - admins can create, update, and delete data
+- admin table list endpoints return paginated data for the management UI
+
+---
+
+## GET `/api/admin/countries`
+### What it does
+Returns a paginated country list for the admin table.
+
+### Query params
+| Name | Required | Example | Plain meaning |
+| --- | --- | --- | --- |
+| `page` | No | `1` | Page number. Defaults to `1`. |
+| `pageSize` | No | `20` | Rows per page. Defaults to `20`, max `100`. |
+
+### Response
+```json
+{
+  "data": {
+    "data": [
+      {
+        "id": "country_id",
+        "code": "THA",
+        "name": "Thailand",
+        "isRegion": false
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
+
+### Possible errors
+| Status | Code | Plain meaning |
+| --- | --- | --- |
+| 400 | `INVALID_PARAMS` | Invalid pagination params. |
+| 401 | `UNAUTHENTICATED` | Not logged in. |
+| 403 | `FORBIDDEN` | Not admin. |
+
+---
+
+## GET `/api/admin/emissions`
+### What it does
+Returns a paginated annual emissions list for the admin table.
+
+Response shape:
+```json
+{
+  "data": {
+    "data": [
+      {
+        "id": "annual_emission_id",
+        "countryCode": "THA",
+        "year": 2020,
+        "total": 403000,
+        "co2": 257000,
+        "ch4": null,
+        "n2o": null,
+        "hfc": null,
+        "pfc": null,
+        "sf6": null
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
+
+Same pagination params and auth errors as `/api/admin/countries`.
+
+---
+
+## GET `/api/admin/sector-shares`
+### What it does
+Returns a paginated sector share list for the admin table.
+
+Response shape:
+```json
+{
+  "data": {
+    "data": [
+      {
+        "id": "sector_share_id",
+        "countryCode": "THA",
+        "year": 2020,
+        "transport": 25.4,
+        "manufacturing": 18.2,
+        "electricity": null,
+        "buildings": 7.1,
+        "other": 3.4
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
+
+Same pagination params and auth errors as `/api/admin/countries`.
 
 ---
 
