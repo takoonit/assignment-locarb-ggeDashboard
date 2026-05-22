@@ -1,11 +1,11 @@
 import {
+  Autocomplete,
   Box,
   FormControl,
-  Select,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import type { SelectChangeEvent } from "@mui/material/Select";
 import { Info, Calendar } from "lucide-react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
@@ -23,24 +23,64 @@ type CountrySelectProps = {
 };
 
 export function CountrySelect({ id, label, ariaLabel = label, countries, value, onChange }: CountrySelectProps) {
+  const selectedCountry = countries.find((country) => country.code === value) ?? null;
+
   return (
     <FormControl size="small" sx={{ mb: 0, minWidth: { xs: "100%", sm: 212 } }}>
       <ControlLabel htmlFor={id}>{label}</ControlLabel>
-      <Select
-        native
+      <Autocomplete
+        autoHighlight
+        disabled={countries.length === 0}
+        getOptionLabel={(country) => country.name}
+        filterOptions={(options, state) => {
+          const query = state.inputValue.trim().toLowerCase();
+          if (!query) return options;
+          return options.filter((country) =>
+            `${country.name} ${country.code}`.toLowerCase().includes(query),
+          );
+        }}
         id={id}
-        inputProps={{ "aria-label": ariaLabel, id }}
-        value={countries.some((country) => country.code === value) ? value : ""}
-        onChange={(event: SelectChangeEvent<string>) => onChange(event.target.value)}
-        sx={selectSx}
-      >
-        {countries.length === 0 ? <option value="">Loading countries</option> : null}
-        {countries.map((country) => (
-          <option key={country.code} value={country.code}>
+        isOptionEqualToValue={(option, currentValue) => option.code === currentValue.code}
+        noOptionsText="No countries"
+        onChange={(_, country) => {
+          if (country) onChange(country.code);
+        }}
+        options={countries}
+        renderInput={(params) => (
+          <TextField
+            disabled={params.disabled}
+            fullWidth={params.fullWidth}
+            id={params.id}
+            size={params.size}
+            slotProps={{
+              ...params.slotProps,
+              htmlInput: {
+                ...params.slotProps.htmlInput,
+                "aria-label": ariaLabel,
+              },
+            }}
+          />
+        )}
+        renderOption={(props, country) => (
+          <Box component="li" {...props} key={country.code}>
             {country.name}
-          </option>
-        ))}
-      </Select>
+            <Typography
+              component="span"
+              sx={{
+                color: cohereTokens.colors.bodyMuted,
+                fontFamily: cohereTokens.font.mono,
+                fontSize: cohereTokens.typography.micro.fontSize,
+                ml: 1,
+              }}
+            >
+              {country.code}
+            </Typography>
+          </Box>
+        )}
+        size="small"
+        sx={autocompleteSx}
+        value={selectedCountry}
+      />
     </FormControl>
   );
 }
@@ -174,20 +214,27 @@ function ControlLabel({ children, htmlFor, asSpan }: { children: string; htmlFor
   );
 }
 
-const selectSx = {
-  fontSize: cohereTokens.typography.micro.fontSize,
-  fontWeight: 500,
-  height: 36,
-  borderRadius: `${cohereTokens.rounded.sm}px`,
+const autocompleteSx = {
+  width: { xs: "100%", sm: 212 },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: `${cohereTokens.rounded.sm}px`,
+    fontSize: cohereTokens.typography.micro.fontSize,
+    fontWeight: 500,
+    minHeight: 36,
+    p: "0 32px 0 0",
+  },
+  "& .MuiOutlinedInput-root .MuiAutocomplete-input": {
+    py: "7px",
+  },
   "& .MuiOutlinedInput-notchedOutline": {
     borderColor: cohereTokens.colors.borderLight,
   },
   "&:hover .MuiOutlinedInput-notchedOutline": {
     borderColor: cohereTokens.colors.slate,
   },
-  "& .MuiOutlinedInput-input": {
-    fontSize: cohereTokens.typography.micro.fontSize,
-    py: "7px",
+  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: cohereTokens.colors.formFocus,
+    borderWidth: 1,
   },
 };
 

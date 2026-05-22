@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { TooltipProps } from "recharts";
+import type { DotItemDotProps, TooltipContentProps } from "recharts";
 import { memo, useMemo, useState } from "react";
 import { ChartEmpty } from "@/components/dashboard/chart-card";
 import { MeasuredResponsiveContainer } from "@/components/dashboard/measured-responsive-container";
@@ -110,7 +110,7 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
             ))}
             <Tooltip
               cursor={{ stroke: cohereTokens.colors.actionBlue, strokeDasharray: "4 4" }}
-              content={(props: TooltipProps<any, any>) => (
+              content={(props: TooltipContentProps) => (
                 <TrendTooltip
                   {...props}
                   countryName={data.country.name}
@@ -128,8 +128,8 @@ export const TrendChart = memo(function TrendChart({ data }: TrendChartProps) {
                 stroke: cohereTokens.colors.canvas,
                 strokeWidth: 2,
               }}
-              dot={(props) => {
-                const pointYear = Number((props as { payload?: { year?: number } }).payload?.year);
+              dot={(props: DotItemDotProps) => {
+                const pointYear = Number((props.payload as { year?: number } | undefined)?.year);
                 if (sliderValue && pointYear === sliderValue) {
                   return (
                     <circle

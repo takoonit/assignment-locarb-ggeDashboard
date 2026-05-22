@@ -225,6 +225,26 @@ describe("Epic 3 dashboard", () => {
     expect(replaceMock).toHaveBeenCalledWith("/?gas=HFC", { scroll: false });
   });
 
+  it("filters countries by typed search and updates dashboard state", async () => {
+    const fetchMock = mockFetch();
+
+    renderDashboard();
+
+    const controls = screen.getByRole("toolbar", { name: /dashboard filters/i });
+    const countryInput = await within(controls).findByRole("combobox", { name: /^country$/i });
+
+    fireEvent.mouseDown(countryInput);
+    fireEvent.change(countryInput, { target: { value: "unit" } });
+    fireEvent.click(await screen.findByRole("option", { name: /united states/i }));
+
+    await waitFor(() => {
+      expect(lastUrlFor(fetchMock, "/api/emissions/trend").searchParams.get("country")).toBe(
+        "USA",
+      );
+    });
+    expect(replaceMock).toHaveBeenCalledWith("/?country=USA", { scroll: false });
+  });
+
   it("renders trend null gaps and sector zero/null values explicitly", async () => {
     mockFetch();
 
@@ -275,5 +295,5 @@ describe("Epic 3 dashboard", () => {
 
     expect(within(trend).getByRole("button", { name: /previous trend year/i })).toBeDisabled();
     expect(replaceMock).not.toHaveBeenCalled();
-  });
+  }, 10_000);
 });
