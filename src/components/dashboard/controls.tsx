@@ -61,22 +61,26 @@ export function CountrySelect({ id, label, ariaLabel = label, countries, value, 
             }}
           />
         )}
-        renderOption={(props, country) => (
-          <Box component="li" {...props} key={country.code}>
-            {country.name}
-            <Typography
-              component="span"
-              sx={{
-                color: cohereTokens.colors.bodyMuted,
-                fontFamily: cohereTokens.font.mono,
-                fontSize: cohereTokens.typography.micro.fontSize,
-                ml: 1,
-              }}
-            >
-              {country.code}
-            </Typography>
-          </Box>
-        )}
+        renderOption={(props, country) => {
+          const { key, ...optionProps } = props;
+
+          return (
+            <Box component="li" key={country.code || key} {...optionProps}>
+              {country.name}
+              <Typography
+                component="span"
+                sx={{
+                  color: cohereTokens.colors.bodyMuted,
+                  fontFamily: cohereTokens.font.mono,
+                  fontSize: cohereTokens.typography.micro.fontSize,
+                  ml: 1,
+                }}
+              >
+                {country.code}
+              </Typography>
+            </Box>
+          );
+        }}
         size="small"
         sx={autocompleteSx}
         value={selectedCountry}
