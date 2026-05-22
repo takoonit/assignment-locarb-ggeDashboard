@@ -15,7 +15,7 @@ Thailand,THA,CO2 emissions from manufacturing/construction,EN.CO2.MANF.ZS,20,21,
 Thailand,THA,CO2 emissions from electricity/heat,EN.CO2.ELGH.ZS,30,31,32
 Thailand,THA,CO2 emissions from buildings,EN.CO2.BLDG.ZS,40,,42
 Thailand,THA,CO2 emissions from other sectors,EN.CO2.OTHX.ZS,0,..,52
-World,WLD,Total greenhouse gas emissions,EN.GHG.ALL.MT.CE.AR5,1000,1001,1002
+World,WLD,Total greenhouse gas emissions,EN.GHG.ALL.MT.CE.AR5,1000,,1002
 Footer,Footer,Footer,Footer,,,
 `;
 
@@ -54,6 +54,12 @@ describe("seed CSV transformer", () => {
       total: 0,
       co2: 60,
     });
+  });
+
+  it("prunes annual rows only when every gas value is missing", () => {
+    expect(result.annualEmissionsByCountryYear.has("WLD:1990")).toBe(true);
+    expect(result.annualEmissionsByCountryYear.has("THA:1991")).toBe(true);
+    expect(result.annualEmissionsByCountryYear.has("WLD:1991")).toBe(false);
   });
 
   it("maps sector series to sector shares", () => {

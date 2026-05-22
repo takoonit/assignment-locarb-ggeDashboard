@@ -245,7 +245,9 @@ export function transformSeedCsv(csv: string): SeedTransformResult {
     countries: Array.from(countriesByCode.values()).sort((left, right) =>
       left.code.localeCompare(right.code),
     ),
-    annualEmissionsByCountryYear,
+    annualEmissionsByCountryYear: pruneEmptyAnnualEmissions(
+      annualEmissionsByCountryYear,
+    ),
     sectorSharesByCountryYear,
   };
 }
@@ -345,6 +347,28 @@ function parseSeedValue(value: string) {
 
   const parsed = Number(normalized.replaceAll(",", ""));
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function pruneEmptyAnnualEmissions(
+  emissions: Map<string, AnnualEmissionSeed>,
+) {
+  return new Map(
+    Array.from(emissions.entries()).filter(
+      ([, emission]) => !isEmptyAnnualEmission(emission),
+    ),
+  );
+}
+
+function isEmptyAnnualEmission(emission: AnnualEmissionSeed) {
+  return (
+    emission.total === null &&
+    emission.co2 === null &&
+    emission.ch4 === null &&
+    emission.n2o === null &&
+    emission.hfc === null &&
+    emission.pfc === null &&
+    emission.sf6 === null
+  );
 }
 
 function seedKey(countryCode: string, year: number) {
