@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Checkbox,
   CircularProgress,
   Dialog,
@@ -29,6 +30,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -58,6 +60,67 @@ type SectorField = (typeof sectorFields)[number];
 type CountryForm = { code: string; name: string; isRegion: boolean };
 type EmissionForm = Record<"countryCode" | "year" | EmissionField, string>;
 type SectorForm = Record<"countryCode" | "year" | SectorField, string>;
+
+const tabMeta: Record<TabKey, { action: string; description: string; noun: string; title: string }> = {
+  countries: {
+    action: "Create country",
+    description: "Maintain country and region records used by the public filters and API responses.",
+    noun: "country records",
+    title: "Countries",
+  },
+  emissions: {
+    action: "Create annual emission",
+    description: "Edit annual greenhouse-gas measurements while preserving explicit missing values.",
+    noun: "annual emission records",
+    title: "Annual emissions",
+  },
+  sectorShares: {
+    action: "Create sector share",
+    description: "Maintain sector percentage splits for country-year detail views.",
+    noun: "sector share records",
+    title: "Sector shares",
+  },
+};
+
+const tableContainerSx: SxProps<Theme> = {
+  border: `1px solid ${cohereTokens.colors.borderLight}`,
+  borderRadius: cohereTokens.rounded.sm,
+  maxWidth: "100%",
+  overflowX: "auto",
+};
+
+const tableSx: SxProps<Theme> = {
+  minWidth: 720,
+  "& .MuiTableCell-root": {
+    borderBottomColor: cohereTokens.colors.borderLight,
+    fontSize: 13,
+    whiteSpace: "nowrap",
+  },
+  "& .MuiTableCell-head": {
+    bgcolor: cohereTokens.colors.paleGreen,
+    color: cohereTokens.colors.ink,
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: 0,
+  },
+  "& .MuiTableBody-root .MuiTableRow-root:hover": {
+    bgcolor: "rgba(16, 35, 31, 0.035)",
+  },
+};
+
+const numericCellSx: SxProps<Theme> = {
+  color: cohereTokens.colors.slate,
+  fontFamily: cohereTokens.font.mono,
+  fontSize: "12px !important",
+  textAlign: "right",
+};
+
+const stickyActionCellSx: SxProps<Theme> = {
+  bgcolor: cohereTokens.colors.canvas,
+  position: "sticky",
+  right: 0,
+  zIndex: 1,
+};
 
 export function AdminPageClient() {
   const router = useRouter();
@@ -280,42 +343,101 @@ export function AdminPageClient() {
       : tab === "emissions"
         ? emissionsQuery.data?.total
         : sectorQuery.data?.total;
+  const activeMeta = tabMeta[tab];
 
   return (
-    <Box component="main" sx={{ bgcolor: cohereTokens.colors.canvas, flex: 1, display: "flex", flexDirection: "column" }}>
+    <Box
+      component="main"
+      sx={{
+        bgcolor: cohereTokens.colors.canvas,
+        display: "flex",
+        flex: 1,
+        flexDirection: "column",
+      }}
+    >
       <Stack spacing={3} sx={{ maxWidth: 1600, mx: "auto", px: { xs: 2, sm: 3 }, py: { xs: 3, md: 4 }, width: "100%" }}>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
+        <Box
           sx={{
-            alignItems: { md: "flex-end" },
-            borderBottom: `1px solid ${cohereTokens.colors.hairline}`,
-            justifyContent: "space-between",
-            pb: 2,
+            bgcolor: cohereTokens.colors.primary,
+            borderRadius: cohereTokens.rounded.lg,
+            color: cohereTokens.colors.onPrimary,
+            overflow: "hidden",
+            p: { xs: 2.5, md: 4 },
           }}
         >
-          <Box>
-            <Typography component="h1" variant="h1" sx={{ fontSize: { xs: 30, md: 38 }, letterSpacing: 0 }}>
-              Admin data maintenance
-            </Typography>
-            <Typography color="text.secondary" variant="body2">
-              Protected CRUD for countries, annual emissions, and sector shares.
-            </Typography>
-          </Box>
-          {currentTotal !== undefined ? (
-            <Typography color="text.secondary" variant="body2">
-              {currentTotal} records
-            </Typography>
-          ) : null}
-        </Stack>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={3}
+            sx={{ alignItems: { md: "flex-end" }, justifyContent: "space-between" }}
+          >
+            <Box sx={{ maxWidth: 760 }}>
+              <Typography
+                component="h1"
+                variant="h1"
+                sx={{ fontSize: { xs: 30, md: 42 }, letterSpacing: 0, lineHeight: 1.05 }}
+              >
+                Admin data maintenance
+              </Typography>
+              <Typography sx={{ color: "rgba(255,255,255,0.72)", maxWidth: 620, mt: 1 }} variant="body2">
+                Protected dataset editing for countries, annual emissions, and sector shares.
+              </Typography>
+            </Box>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
+            >
+              <Chip
+                label={activeMeta.title}
+                size="small"
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  color: cohereTokens.colors.onPrimary,
+                  fontWeight: 700,
+                }}
+              />
+              {currentTotal !== undefined ? (
+                <Typography sx={{ color: "rgba(255,255,255,0.72)" }} variant="body2">
+                  {formatCount(currentTotal, activeMeta.noun)}
+                </Typography>
+              ) : null}
+            </Stack>
+          </Stack>
+        </Box>
 
         {fetchError ? <Alert severity="error">Failed to load data: {fetchError.message}</Alert> : null}
         {mutationError ? <Alert severity="error">Mutation failed: {mutationError}</Alert> : null}
 
-        <Paper variant="outlined" sx={{ borderColor: cohereTokens.colors.cardBorder, overflow: "hidden" }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            borderColor: cohereTokens.colors.cardBorder,
+            borderRadius: cohereTokens.rounded.lg,
+            boxShadow: "0 18px 48px rgba(16, 35, 31, 0.06)",
+            overflow: "hidden",
+          }}
+        >
           <Tabs
             aria-label="Admin CRUD sections"
             onChange={handleTabChange}
+            sx={{
+              borderBottom: `1px solid ${cohereTokens.colors.borderLight}`,
+              minHeight: 52,
+              px: { xs: 1, md: 2 },
+              "& .MuiTab-root": {
+                fontSize: 13,
+                fontWeight: 700,
+                minHeight: 52,
+                textTransform: "none",
+              },
+              "& .Mui-selected": {
+                color: cohereTokens.colors.primary,
+              },
+              "& .MuiTabs-indicator": {
+                bgcolor: cohereTokens.colors.primary,
+              },
+            }}
             value={tab}
             variant="scrollable"
           >
@@ -323,9 +445,9 @@ export function AdminPageClient() {
             <Tab label="Annual emissions" value="emissions" />
             <Tab label="Sector shares" value="sectorShares" />
           </Tabs>
-          <Box sx={{ p: { xs: 1.5, md: 3 }, position: "relative", minHeight: 120 }}>
+          <Box sx={{ p: { xs: 1.5, md: 3 }, position: "relative", minHeight: 280 }}>
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+              <Box sx={{ alignItems: "center", display: "flex", justifyContent: "center", minHeight: 220 }}>
                 <CircularProgress size={32} />
               </Box>
             ) : (
@@ -423,16 +545,16 @@ function CountriesPanel({
   total: number;
 }) {
   return (
-    <Stack spacing={2}>
-      <PanelHeader title="Countries" action="Create country" onCreate={onCreate} />
-      <TableContainer>
-        <Table size="small" aria-label="Countries table">
+    <Stack spacing={2.5}>
+      <PanelHeader meta={tabMeta.countries} onCreate={onCreate} total={total} />
+      <TableContainer sx={tableContainerSx}>
+        <Table size="small" aria-label="Countries table" sx={tableSx}>
           <TableHead>
             <TableRow>
               <TableCell>Code</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Region</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell align="right" sx={stickyActionCellSx}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -445,10 +567,22 @@ function CountriesPanel({
             ) : (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.code}</TableCell>
+                  <TableCell sx={{ fontFamily: cohereTokens.font.mono, fontWeight: 700 }}>{row.code}</TableCell>
                   <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.isRegion ? "Yes" : "No"}</TableCell>
-                  <TableCell align="right">
+                  <TableCell>
+                    <Chip
+                      label={row.isRegion ? "Region" : "Country"}
+                      size="small"
+                      sx={{
+                        bgcolor: row.isRegion ? cohereTokens.colors.paleBlue : cohereTokens.colors.paleGreen,
+                        borderRadius: cohereTokens.rounded.xs,
+                        color: cohereTokens.colors.ink,
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right" sx={stickyActionCellSx}>
                     <RowActions
                       deleteLabel="Delete country"
                       editLabel="Edit country"
@@ -464,6 +598,7 @@ function CountriesPanel({
             <TableRow>
               <TablePagination
                 count={total}
+                colSpan={4}
                 onPageChange={onPageChange}
                 page={page}
                 rowsPerPage={pageSize}
@@ -497,18 +632,18 @@ function EmissionsPanel({
   total: number;
 }) {
   return (
-    <Stack spacing={2}>
-      <PanelHeader title="Annual emissions" action="Create annual emission" onCreate={onCreate} />
-      <TableContainer>
-        <Table size="small" aria-label="Annual emissions table">
+    <Stack spacing={2.5}>
+      <PanelHeader meta={tabMeta.emissions} onCreate={onCreate} total={total} />
+      <TableContainer sx={tableContainerSx}>
+        <Table size="small" aria-label="Annual emissions table" sx={{ ...tableSx, minWidth: 1120 }}>
           <TableHead>
             <TableRow>
               <TableCell>Country</TableCell>
               <TableCell>Year</TableCell>
               {emissionFields.map((field) => (
-                <TableCell key={field}>{field.toUpperCase()}</TableCell>
+                <TableCell align="right" key={field}>{field.toUpperCase()}</TableCell>
               ))}
-              <TableCell align="right">Actions</TableCell>
+              <TableCell align="right" sx={stickyActionCellSx}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -521,12 +656,12 @@ function EmissionsPanel({
             ) : (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.countryCode}</TableCell>
-                  <TableCell>{row.year}</TableCell>
+                  <TableCell sx={{ fontFamily: cohereTokens.font.mono, fontWeight: 700 }}>{row.countryCode}</TableCell>
+                  <TableCell sx={{ fontFamily: cohereTokens.font.mono }}>{row.year}</TableCell>
                   {emissionFields.map((field) => (
-                    <TableCell key={field}>{formatNullable(row[field])}</TableCell>
+                    <TableCell align="right" key={field} sx={numericCellSx}>{formatNullable(row[field])}</TableCell>
                   ))}
-                  <TableCell align="right">
+                  <TableCell align="right" sx={stickyActionCellSx}>
                     <RowActions
                       deleteLabel="Delete annual emission"
                       editLabel="Edit annual emission"
@@ -576,18 +711,18 @@ function SectorSharesPanel({
   total: number;
 }) {
   return (
-    <Stack spacing={2}>
-      <PanelHeader title="Sector shares" action="Create sector share" onCreate={onCreate} />
-      <TableContainer>
-        <Table size="small" aria-label="Sector shares table">
+    <Stack spacing={2.5}>
+      <PanelHeader meta={tabMeta.sectorShares} onCreate={onCreate} total={total} />
+      <TableContainer sx={tableContainerSx}>
+        <Table size="small" aria-label="Sector shares table" sx={{ ...tableSx, minWidth: 980 }}>
           <TableHead>
             <TableRow>
               <TableCell>Country</TableCell>
               <TableCell>Year</TableCell>
               {sectorFields.map((field) => (
-                <TableCell key={field}>{titleCase(field)}</TableCell>
+                <TableCell align="right" key={field}>{titleCase(field)}</TableCell>
               ))}
-              <TableCell align="right">Actions</TableCell>
+              <TableCell align="right" sx={stickyActionCellSx}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -600,12 +735,12 @@ function SectorSharesPanel({
             ) : (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.countryCode}</TableCell>
-                  <TableCell>{row.year}</TableCell>
+                  <TableCell sx={{ fontFamily: cohereTokens.font.mono, fontWeight: 700 }}>{row.countryCode}</TableCell>
+                  <TableCell sx={{ fontFamily: cohereTokens.font.mono }}>{row.year}</TableCell>
                   {sectorFields.map((field) => (
-                    <TableCell key={field}>{formatNullable(row[field])}</TableCell>
+                    <TableCell align="right" key={field} sx={numericCellSx}>{formatNullable(row[field])}</TableCell>
                   ))}
-                  <TableCell align="right">
+                  <TableCell align="right" sx={stickyActionCellSx}>
                     <RowActions
                       deleteLabel="Delete sector share"
                       editLabel="Edit sector share"
@@ -636,21 +771,36 @@ function SectorSharesPanel({
 }
 
 function PanelHeader({
-  action,
+  meta,
   onCreate,
-  title,
+  total,
 }: {
-  action: string;
+  meta: { action: string; description: string; noun: string; title: string };
   onCreate: () => void;
-  title: string;
+  total: number;
 }) {
   return (
-    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between" }}>
-      <Typography component="h2" variant="h3" sx={{ fontSize: 22 }}>
-        {title}
-      </Typography>
-      <Button onClick={onCreate} startIcon={<Plus size={18} />} variant="contained">
-        {action}
+    <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
+      <Box>
+        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
+          <Typography component="h2" variant="h3" sx={{ fontSize: 22 }}>
+            {meta.title}
+          </Typography>
+          <Typography color="text.secondary" sx={{ fontFamily: cohereTokens.font.mono, fontSize: 12 }}>
+            {formatCount(total, meta.noun)}
+          </Typography>
+        </Stack>
+        <Typography color="text.secondary" sx={{ maxWidth: 720, mt: 0.5 }} variant="body2">
+          {meta.description}
+        </Typography>
+      </Box>
+      <Button
+        onClick={onCreate}
+        startIcon={<Plus size={18} />}
+        sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+        variant="contained"
+      >
+        {meta.action}
       </Button>
     </Stack>
   );
@@ -670,12 +820,26 @@ function RowActions({
   return (
     <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
       <Tooltip title={editLabel}>
-        <IconButton aria-label={editLabel} onClick={onEdit} size="small">
+        <IconButton
+          aria-label={editLabel}
+          onClick={onEdit}
+          size="small"
+          sx={{
+            border: `1px solid ${cohereTokens.colors.borderLight}`,
+            color: cohereTokens.colors.primary,
+          }}
+        >
           <Pencil size={18} />
         </IconButton>
       </Tooltip>
       <Tooltip title={deleteLabel}>
-        <IconButton aria-label={deleteLabel} color="error" onClick={onDelete} size="small">
+        <IconButton
+          aria-label={deleteLabel}
+          color="error"
+          onClick={onDelete}
+          size="small"
+          sx={{ border: `1px solid ${cohereTokens.colors.borderLight}` }}
+        >
           <Trash2 size={18} />
         </IconButton>
       </Tooltip>
@@ -898,7 +1062,17 @@ function DeleteDialog({
 }
 
 function formatNullable(value: number | null) {
-  return value === null ? "No data" : String(value);
+  return value === null ? (
+    <Box component="span" sx={{ color: cohereTokens.colors.muted, fontFamily: cohereTokens.font.ui, fontSize: 12 }}>
+      No data
+    </Box>
+  ) : (
+    String(value)
+  );
+}
+
+function formatCount(count: number, noun: string) {
+  return `${count.toLocaleString()} ${noun}`;
 }
 
 function emptyCountryForm(): CountryForm {
