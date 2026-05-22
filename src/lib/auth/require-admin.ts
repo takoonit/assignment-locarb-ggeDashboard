@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth/config";
 import { ApiError } from "@/lib/api/error";
+import { cache } from "react";
 
-export async function requireAdmin() {
+export const requireAdmin = cache(async function requireAdmin() {
   const session = await auth();
 
   if (!session?.user) {
@@ -13,4 +14,4 @@ export async function requireAdmin() {
   }
 
   return session;
-}
+});

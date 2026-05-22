@@ -3,9 +3,9 @@ import { ApiError } from "@/lib/api/error";
 
 const requireAdminMock = vi.hoisted(() => vi.fn());
 const serviceMock = vi.hoisted(() => ({
-  listAdminAnnualEmissions: vi.fn(),
-  listAdminCountries: vi.fn(),
-  listAdminSectorShares: vi.fn(),
+  listAdminAnnualEmissionsPaged: vi.fn(),
+  listAdminCountriesPaged: vi.fn(),
+  listAdminSectorSharesPaged: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/require-admin", () => ({
@@ -31,8 +31,31 @@ describe("admin page", () => {
     const { default: AdminPage } = await import("./page");
 
     await expect(AdminPage()).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
-    expect(serviceMock.listAdminCountries).not.toHaveBeenCalled();
-    expect(serviceMock.listAdminAnnualEmissions).not.toHaveBeenCalled();
-    expect(serviceMock.listAdminSectorShares).not.toHaveBeenCalled();
+    expect(serviceMock.listAdminCountriesPaged).not.toHaveBeenCalled();
+    expect(serviceMock.listAdminAnnualEmissionsPaged).not.toHaveBeenCalled();
+    expect(serviceMock.listAdminSectorSharesPaged).not.toHaveBeenCalled();
+  });
+
+  it("preloads the visible admin tab before rendering the client", async () => {
+    requireAdminMock.mockResolvedValueOnce({ user: { role: "ADMIN" } });
+    serviceMock.listAdminAnnualEmissionsPaged.mockResolvedValueOnce({
+      data: [],
+      page: 2,
+      pageSize: 20,
+      total: 0,
+    });
+
+    const { default: AdminPage } = await import("./page");
+
+    await AdminPage({
+      searchParams: Promise.resolve({ page: "2", tab: "emissions" }),
+    });
+
+    expect(serviceMock.listAdminAnnualEmissionsPaged).toHaveBeenCalledWith({
+      page: 2,
+      pageSize: 20,
+    });
+    expect(serviceMock.listAdminCountriesPaged).not.toHaveBeenCalled();
+    expect(serviceMock.listAdminSectorSharesPaged).not.toHaveBeenCalled();
   });
 });

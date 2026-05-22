@@ -43,6 +43,7 @@ import type {
 import { cohereTokens } from "@/theme";
 
 const PAGE_SIZE = 20;
+const adminQueryKey = (tab: TabKey, page: number) => ["admin", tab, page] as const;
 
 type TabKey = "countries" | "emissions" | "sectorShares";
 type DialogMode = "create" | "edit";
@@ -83,8 +84,8 @@ const tabMeta: Record<TabKey, { action: string; description: string; noun: strin
 };
 
 const tableContainerSx: SxProps<Theme> = {
-  border: `1px solid ${cohereTokens.colors.borderLight}`,
-  borderRadius: cohereTokens.rounded.sm,
+  bgcolor: cohereTokens.colors.canvas,
+  borderTop: `1px solid ${cohereTokens.colors.borderLight}`,
   maxWidth: "100%",
   overflowX: "auto",
 };
@@ -94,17 +95,23 @@ const tableSx: SxProps<Theme> = {
   "& .MuiTableCell-root": {
     borderBottomColor: cohereTokens.colors.borderLight,
     fontSize: 13,
+    height: 44,
+    px: 2,
     whiteSpace: "nowrap",
   },
   "& .MuiTableCell-head": {
-    bgcolor: cohereTokens.colors.paleGreen,
-    color: cohereTokens.colors.ink,
+    bgcolor: "#f5f7f4",
+    color: cohereTokens.colors.bodyMuted,
     fontSize: 12,
     fontWeight: 700,
     letterSpacing: 0,
+    textTransform: "uppercase",
   },
   "& .MuiTableBody-root .MuiTableRow-root:hover": {
     bgcolor: "rgba(16, 35, 31, 0.035)",
+  },
+  "& .MuiTableFooter-root .MuiTableCell-root": {
+    borderBottom: 0,
   },
 };
 
@@ -117,9 +124,34 @@ const numericCellSx: SxProps<Theme> = {
 
 const stickyActionCellSx: SxProps<Theme> = {
   bgcolor: cohereTokens.colors.canvas,
+  boxShadow: "-10px 0 16px rgba(16, 35, 31, 0.04)",
   position: "sticky",
   right: 0,
   zIndex: 1,
+};
+
+const stickyActionHeadCellSx: SxProps<Theme> = {
+  ...stickyActionCellSx,
+  bgcolor: "#f5f7f4",
+  zIndex: 3,
+};
+
+const tableShellSx: SxProps<Theme> = {
+  bgcolor: cohereTokens.colors.canvas,
+  borderColor: cohereTokens.colors.borderLight,
+  borderRadius: 0,
+  boxShadow: "none",
+  overflow: "visible",
+};
+
+const adminToolbarSx: SxProps<Theme> = {
+  alignItems: { xs: "stretch", md: "center" },
+  borderBottom: `1px solid ${cohereTokens.colors.borderLight}`,
+  display: "grid",
+  gap: { xs: 1.5, md: 2 },
+  gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) auto" },
+  px: { xs: 1.5, md: 2 },
+  py: { xs: 1.25, md: 1.5 },
 };
 
 export function AdminPageClient() {
@@ -142,19 +174,19 @@ export function AdminPageClient() {
   const queryClient = useQueryClient();
 
   const countriesQuery = useQuery({
-    queryKey: ["admin", "countries", page],
+    queryKey: adminQueryKey("countries", page),
     queryFn: () => adminFetch<PagedResult<AdminCountryRow>>(`/api/admin/countries?page=${page}&pageSize=${PAGE_SIZE}`),
     enabled: tab === "countries",
   });
 
   const emissionsQuery = useQuery({
-    queryKey: ["admin", "emissions", page],
+    queryKey: adminQueryKey("emissions", page),
     queryFn: () => adminFetch<PagedResult<AdminEmissionRow>>(`/api/admin/emissions?page=${page}&pageSize=${PAGE_SIZE}`),
     enabled: tab === "emissions",
   });
 
   const sectorQuery = useQuery({
-    queryKey: ["admin", "sectorShares", page],
+    queryKey: adminQueryKey("sectorShares", page),
     queryFn: () => adminFetch<PagedResult<AdminSectorShareRow>>(`/api/admin/sector-shares?page=${page}&pageSize=${PAGE_SIZE}`),
     enabled: tab === "sectorShares",
   });
@@ -344,6 +376,17 @@ export function AdminPageClient() {
         ? emissionsQuery.data?.total
         : sectorQuery.data?.total;
   const activeMeta = tabMeta[tab];
+  const handleCreate = () => {
+    if (tab === "countries") {
+      setCountryDialog({ mode: "create", values: emptyCountryForm() });
+      return;
+    }
+    if (tab === "emissions") {
+      setEmissionDialog({ mode: "create", values: emptyEmissionForm() });
+      return;
+    }
+    setSectorDialog({ mode: "create", values: emptySectorForm() });
+  };
 
   return (
     <Box
@@ -355,31 +398,32 @@ export function AdminPageClient() {
         flexDirection: "column",
       }}
     >
-      <Stack spacing={3} sx={{ maxWidth: 1600, mx: "auto", px: { xs: 2, sm: 3 }, py: { xs: 3, md: 4 }, width: "100%" }}>
-        <Box
-          sx={{
-            bgcolor: cohereTokens.colors.primary,
-            borderRadius: cohereTokens.rounded.lg,
-            color: cohereTokens.colors.onPrimary,
-            overflow: "hidden",
-            p: { xs: 2.5, md: 4 },
-          }}
-        >
+      <Stack
+        spacing={2}
+        sx={{
+          maxWidth: 1480,
+          mx: "auto",
+          px: { xs: 1.5, sm: 2.5, lg: 3 },
+          py: { xs: 2, md: 3 },
+          width: "100%",
+        }}
+      >
+        <Box>
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={3}
+            spacing={2}
             sx={{ alignItems: { md: "flex-end" }, justifyContent: "space-between" }}
           >
-            <Box sx={{ maxWidth: 760 }}>
+            <Box sx={{ maxWidth: 720 }}>
               <Typography
                 component="h1"
-                variant="h1"
-                sx={{ fontSize: { xs: 30, md: 42 }, letterSpacing: 0, lineHeight: 1.05 }}
+                variant="h2"
+                sx={{ fontSize: { xs: 27, md: 34 }, letterSpacing: 0, lineHeight: 1.12 }}
               >
                 Admin data maintenance
               </Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.72)", maxWidth: 620, mt: 1 }} variant="body2">
-                Protected dataset editing for countries, annual emissions, and sector shares.
+              <Typography color="text.secondary" sx={{ maxWidth: 640, mt: 0.75 }} variant="body2">
+                Protected editing for seed-backed country, emissions, and sector records.
               </Typography>
             </Box>
             <Stack
@@ -391,14 +435,15 @@ export function AdminPageClient() {
                 label={activeMeta.title}
                 size="small"
                 sx={{
-                  bgcolor: "rgba(255,255,255,0.12)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  color: cohereTokens.colors.onPrimary,
+                  bgcolor: cohereTokens.colors.paleGreen,
+                  border: `1px solid ${cohereTokens.colors.borderLight}`,
+                  borderRadius: cohereTokens.rounded.xs,
+                  color: cohereTokens.colors.primary,
                   fontWeight: 700,
                 }}
               />
               {currentTotal !== undefined ? (
-                <Typography sx={{ color: "rgba(255,255,255,0.72)" }} variant="body2">
+                <Typography color="text.secondary" sx={{ fontFamily: cohereTokens.font.mono, fontSize: 12 }} variant="body2">
                   {formatCount(currentTotal, activeMeta.noun)}
                 </Typography>
               ) : null}
@@ -409,43 +454,50 @@ export function AdminPageClient() {
         {fetchError ? <Alert severity="error">Failed to load data: {fetchError.message}</Alert> : null}
         {mutationError ? <Alert severity="error">Mutation failed: {mutationError}</Alert> : null}
 
-        <Paper
-          variant="outlined"
-          sx={{
-            borderColor: cohereTokens.colors.cardBorder,
-            borderRadius: cohereTokens.rounded.lg,
-            boxShadow: "0 18px 48px rgba(16, 35, 31, 0.06)",
-            overflow: "hidden",
-          }}
-        >
-          <Tabs
-            aria-label="Admin CRUD sections"
-            onChange={handleTabChange}
-            sx={{
-              borderBottom: `1px solid ${cohereTokens.colors.borderLight}`,
-              minHeight: 52,
-              px: { xs: 1, md: 2 },
-              "& .MuiTab-root": {
-                fontSize: 13,
-                fontWeight: 700,
-                minHeight: 52,
-                textTransform: "none",
-              },
-              "& .Mui-selected": {
-                color: cohereTokens.colors.primary,
-              },
-              "& .MuiTabs-indicator": {
-                bgcolor: cohereTokens.colors.primary,
-              },
-            }}
-            value={tab}
-            variant="scrollable"
-          >
-            <Tab label="Countries" value="countries" />
-            <Tab label="Annual emissions" value="emissions" />
-            <Tab label="Sector shares" value="sectorShares" />
-          </Tabs>
-          <Box sx={{ p: { xs: 1.5, md: 3 }, position: "relative", minHeight: 280 }}>
+        <Paper variant="outlined" sx={tableShellSx}>
+          <Box sx={adminToolbarSx}>
+            <Tabs
+              aria-label="Admin CRUD sections"
+              onChange={handleTabChange}
+              sx={{
+                minHeight: 40,
+                "& .MuiTab-root": {
+                  borderRadius: cohereTokens.rounded.xs,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  minHeight: 40,
+                  px: 1.5,
+                  textTransform: "none",
+                },
+                "& .Mui-selected": {
+                  bgcolor: cohereTokens.colors.paleGreen,
+                  color: cohereTokens.colors.primary,
+                },
+                "& .MuiTabs-indicator": {
+                  display: "none",
+                },
+              }}
+              value={tab}
+              variant="scrollable"
+            >
+              <Tab label="Countries" value="countries" />
+              <Tab label="Annual emissions" value="emissions" />
+              <Tab label="Sector shares" value="sectorShares" />
+            </Tabs>
+            <Button
+              onClick={handleCreate}
+              startIcon={<Plus size={17} />}
+              sx={{
+                borderRadius: cohereTokens.rounded.xs,
+                justifySelf: { md: "end" },
+                minHeight: 40,
+              }}
+              variant="contained"
+            >
+              {activeMeta.action}
+            </Button>
+          </Box>
+          <Box sx={{ position: "relative", minHeight: 280 }}>
             {loading ? (
               <Box sx={{ alignItems: "center", display: "flex", justifyContent: "center", minHeight: 220 }}>
                 <CircularProgress size={32} />
@@ -458,7 +510,6 @@ export function AdminPageClient() {
                     pageSize={PAGE_SIZE}
                     rows={countryRows}
                     total={countriesQuery.data?.total ?? 0}
-                    onCreate={() => setCountryDialog({ mode: "create", values: emptyCountryForm() })}
                     onDelete={(row) => setDeleteTarget({ type: "country", row })}
                     onEdit={(row) => setCountryDialog({ mode: "edit", row, values: countryForm(row) })}
                     onPageChange={handlePageChange}
@@ -470,7 +521,6 @@ export function AdminPageClient() {
                     pageSize={PAGE_SIZE}
                     rows={emissionRows}
                     total={emissionsQuery.data?.total ?? 0}
-                    onCreate={() => setEmissionDialog({ mode: "create", values: emptyEmissionForm() })}
                     onDelete={(row) => setDeleteTarget({ type: "emission", row })}
                     onEdit={(row) => setEmissionDialog({ mode: "edit", row, values: emissionForm(row) })}
                     onPageChange={handlePageChange}
@@ -482,7 +532,6 @@ export function AdminPageClient() {
                     pageSize={PAGE_SIZE}
                     rows={sectorRows}
                     total={sectorQuery.data?.total ?? 0}
-                    onCreate={() => setSectorDialog({ mode: "create", values: emptySectorForm() })}
                     onDelete={(row) => setDeleteTarget({ type: "sectorShare", row })}
                     onEdit={(row) => setSectorDialog({ mode: "edit", row, values: sectorForm(row) })}
                     onPageChange={handlePageChange}
@@ -527,7 +576,6 @@ export function AdminPageClient() {
 
 function CountriesPanel({
   onPageChange,
-  onCreate,
   onDelete,
   onEdit,
   page,
@@ -536,7 +584,6 @@ function CountriesPanel({
   total,
 }: {
   onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void;
-  onCreate: () => void;
   onDelete: (row: AdminCountryRow) => void;
   onEdit: (row: AdminCountryRow) => void;
   page: number;
@@ -545,16 +592,16 @@ function CountriesPanel({
   total: number;
 }) {
   return (
-    <Stack spacing={2.5}>
-      <PanelHeader meta={tabMeta.countries} onCreate={onCreate} total={total} />
+    <Stack spacing={0}>
+      <PanelHeader meta={tabMeta.countries} total={total} />
       <TableContainer sx={tableContainerSx}>
-        <Table size="small" aria-label="Countries table" sx={tableSx}>
+        <Table stickyHeader size="small" aria-label="Countries table" sx={tableSx}>
           <TableHead>
             <TableRow>
               <TableCell>Code</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Region</TableCell>
-              <TableCell align="right" sx={stickyActionCellSx}>Actions</TableCell>
+              <TableCell align="right" sx={stickyActionHeadCellSx}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -614,7 +661,6 @@ function CountriesPanel({
 
 function EmissionsPanel({
   onPageChange,
-  onCreate,
   onDelete,
   onEdit,
   page,
@@ -623,7 +669,6 @@ function EmissionsPanel({
   total,
 }: {
   onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void;
-  onCreate: () => void;
   onDelete: (row: AdminEmissionRow) => void;
   onEdit: (row: AdminEmissionRow) => void;
   page: number;
@@ -632,10 +677,10 @@ function EmissionsPanel({
   total: number;
 }) {
   return (
-    <Stack spacing={2.5}>
-      <PanelHeader meta={tabMeta.emissions} onCreate={onCreate} total={total} />
+    <Stack spacing={0}>
+      <PanelHeader meta={tabMeta.emissions} total={total} />
       <TableContainer sx={tableContainerSx}>
-        <Table size="small" aria-label="Annual emissions table" sx={{ ...tableSx, minWidth: 1120 }}>
+        <Table stickyHeader size="small" aria-label="Annual emissions table" sx={{ ...tableSx, minWidth: 1120 }}>
           <TableHead>
             <TableRow>
               <TableCell>Country</TableCell>
@@ -643,7 +688,7 @@ function EmissionsPanel({
               {emissionFields.map((field) => (
                 <TableCell align="right" key={field}>{field.toUpperCase()}</TableCell>
               ))}
-              <TableCell align="right" sx={stickyActionCellSx}>Actions</TableCell>
+              <TableCell align="right" sx={stickyActionHeadCellSx}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -693,7 +738,6 @@ function EmissionsPanel({
 
 function SectorSharesPanel({
   onPageChange,
-  onCreate,
   onDelete,
   onEdit,
   page,
@@ -702,7 +746,6 @@ function SectorSharesPanel({
   total,
 }: {
   onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void;
-  onCreate: () => void;
   onDelete: (row: AdminSectorShareRow) => void;
   onEdit: (row: AdminSectorShareRow) => void;
   page: number;
@@ -711,10 +754,10 @@ function SectorSharesPanel({
   total: number;
 }) {
   return (
-    <Stack spacing={2.5}>
-      <PanelHeader meta={tabMeta.sectorShares} onCreate={onCreate} total={total} />
+    <Stack spacing={0}>
+      <PanelHeader meta={tabMeta.sectorShares} total={total} />
       <TableContainer sx={tableContainerSx}>
-        <Table size="small" aria-label="Sector shares table" sx={{ ...tableSx, minWidth: 980 }}>
+        <Table stickyHeader size="small" aria-label="Sector shares table" sx={{ ...tableSx, minWidth: 980 }}>
           <TableHead>
             <TableRow>
               <TableCell>Country</TableCell>
@@ -722,7 +765,7 @@ function SectorSharesPanel({
               {sectorFields.map((field) => (
                 <TableCell align="right" key={field}>{titleCase(field)}</TableCell>
               ))}
-              <TableCell align="right" sx={stickyActionCellSx}>Actions</TableCell>
+              <TableCell align="right" sx={stickyActionHeadCellSx}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -772,18 +815,26 @@ function SectorSharesPanel({
 
 function PanelHeader({
   meta,
-  onCreate,
   total,
 }: {
   meta: { action: string; description: string; noun: string; title: string };
-  onCreate: () => void;
   total: number;
 }) {
   return (
-    <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ justifyContent: "space-between" }}>
+    <Stack
+      direction={{ xs: "column", md: "row" }}
+      spacing={1}
+      sx={{
+        alignItems: { md: "flex-end" },
+        bgcolor: cohereTokens.colors.canvas,
+        justifyContent: "space-between",
+        px: { xs: 1.5, md: 2 },
+        py: { xs: 1.5, md: 2 },
+      }}
+    >
       <Box>
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
-          <Typography component="h2" variant="h3" sx={{ fontSize: 22 }}>
+          <Typography component="h2" variant="h3" sx={{ fontSize: 20, letterSpacing: 0, lineHeight: 1.2 }}>
             {meta.title}
           </Typography>
           <Typography color="text.secondary" sx={{ fontFamily: cohereTokens.font.mono, fontSize: 12 }}>
@@ -794,14 +845,6 @@ function PanelHeader({
           {meta.description}
         </Typography>
       </Box>
-      <Button
-        onClick={onCreate}
-        startIcon={<Plus size={18} />}
-        sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
-        variant="contained"
-      >
-        {meta.action}
-      </Button>
     </Stack>
   );
 }

@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  transpilePackages: ["@mui/x-date-pickers", "@mui/material", "@mui/icons-material", "@mui/system"],
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
