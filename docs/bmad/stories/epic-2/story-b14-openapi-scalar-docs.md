@@ -23,9 +23,9 @@ As a reviewer, I want interactive API documentation so that I can inspect endpoi
 
 ## Architecture Context
 
-- OpenAPI document is generated via `zod-to-openapi` (`@asteasolutions/zod-to-openapi`) — schemas are defined once in Zod and reflected directly into the spec.
+- OpenAPI document is maintained as an OpenAPI 3.1 JSON contract in `src/lib/openapi.ts` and validated by focused OpenAPI tests against the implemented route surface.
 - Interactive docs are served by `@scalar/nextjs-api-reference`, pointed at `/api/openapi`.
 - The spec targets OpenAPI 3.1.0; Swagger 2.0 compatibility is not required.
 - Keep docs aligned with Zod schemas and route contracts.
-- Both packages must be declared explicitly in `package.json` and `bun.lock`.
-- B14 is not complete until B5 and B7 routes exist and the generated spec reflects implemented behavior, not only planned contract behavior.
+- Scalar must be declared explicitly in `package.json` and `bun.lock`.
+- B14 is not complete until B5 and B7 routes exist and the OpenAPI document reflects implemented behavior, not only planned contract behavior.

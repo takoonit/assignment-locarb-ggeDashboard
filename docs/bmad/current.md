@@ -1,5 +1,10 @@
 # Active Story
 
-Status: none
-Last completed: B15 — README on 2026-04-29
-Next: see docs/bmad/stories/ for the next story in sequence
+Story: Assignment Review Fixes
+Branch: feature/assignment-review-fixes
+Epic: Delivery Hardening
+Story file: docs/bmad/tech-spec-assignment-review-fixes.md
+Started: 2026-05-20
+Status: completed
+Last completed: Assignment Review Fixes on 2026-05-20
+Next: review/stage the branch changes for commit

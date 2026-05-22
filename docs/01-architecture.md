@@ -63,12 +63,12 @@ Within the Next.js app, code is organised in concentric layers:
 Presentation     app/(dashboard)/*      React components, charts, map
 API              app/api/*/route.ts     Request parsing, response shaping
 Validation       lib/schemas/*.ts       Zod schemas for input/output
-Documentation    lib/openapi.ts         Zod-generated OpenAPI contract for Scalar
+Documentation    lib/openapi.ts         OpenAPI 3.1 contract for Scalar
 Business         lib/services/*.ts      Domain logic (aggregation, rules)
 Persistence      lib/db.ts + Prisma     Database access only
 ```
 
-**Rule:** layers only call downward. Pages never touch Prisma directly. API routes never embed business logic. OpenAPI documentation is generated from shared Zod schemas and rendered with Scalar, avoiding hand-written YAML. This keeps each file under 100 lines and each test focused on one concern.
+**Rule:** layers only call downward. Pages never touch Prisma directly. API routes never embed business logic. OpenAPI documentation is rendered with Scalar and kept aligned with Zod-validated route contracts through focused OpenAPI tests. This keeps each file focused on one concern.
 
 Full folder structure lives in `01b — Conventions § File Structure`.
 

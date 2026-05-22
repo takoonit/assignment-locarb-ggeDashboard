@@ -24,7 +24,7 @@ Auth via Auth.js with GitHub provider.
 - `GET /api/emissions/filter?country=&gas=&year=`
 - `POST`, `PATCH`, `DELETE` for emissions
 - `POST`, `PATCH`, `DELETE` for countries
-- Zod-generated OpenAPI documentation at `/api/openapi`
+- OpenAPI documentation at `/api/openapi`
 - Scalar interactive API documentation at `/api/docs`
 - Structured error responses with correct HTTP status codes
 
@@ -69,7 +69,7 @@ Backlog bonus scope, only after the core build works:
 - API responses under 500ms for typical queries
 - Input validation on every endpoint (Zod)
 - Type-safe end to end (Prisma + Zod)
-- API documentation schemas reuse Zod as the source of truth; no hand-written OpenAPI YAML
+- API documentation stays aligned with Zod-validated route contracts and is covered by OpenAPI tests; no hand-written OpenAPI YAML
 - Accessible: keyboard navigable, colourblind-safe map palette
 
 # 5. Data Source

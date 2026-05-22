@@ -30,7 +30,7 @@ This project delivers a full-stack greenhouse gas emissions dashboard and API wi
 - Emissions trend line by country over time
 - Interactive world map by selected year
 - Sector comparison chart by country and year
-- Filters for country, gas, and year
+- Searchable country selector plus gas and year filters
 - Empty states for missing or unavailable data
 
 ### Public API
@@ -69,6 +69,7 @@ Key endpoints:
 - Provided CSV is used as seed data only
 - Seed script transforms CSV into application tables
 - Missing CSV values are preserved as `null`, never converted to `0`
+- Annual seed rows are pruned when every annual gas field is missing
 - Partial datasets render gracefully on the frontend
 
 ---
@@ -122,6 +123,18 @@ Key endpoints:
 - `docs/06-tradeoffs-next-steps.md`
 - `docs/07-env-neon-doppler.md`
 - `TASK.md`
+
+---
+
+## Screenshots & Architecture
+
+Dashboard screenshot:
+
+![Dashboard screenshot](docs/screenshots/dashboard.png)
+
+Architecture diagram:
+
+![System architecture](docs/system-architecture.png)
 
 ---
 
@@ -268,6 +281,7 @@ Re-login after promotion to access `/admin`.
 
 - Interactive docs: `/api/docs`
 - OpenAPI spec: `/api/openapi`
+- The OpenAPI document is maintained as a tested OpenAPI 3.1 contract in `src/lib/openapi.ts`.
 
 ---
 

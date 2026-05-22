@@ -122,7 +122,7 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 ---
 
 # ADR-012: Evaluate OpenAPI schema source strategy
-**Status:** Accepted
+**Status:** Superseded by ADR-026
 **Date:** 2026-04-28
 **Context:** The app will use Zod for runtime validation and OpenAPI for API documentation. If schemas are maintained in multiple places, the contract can drift from the implementation.
 **Decision:** Generate OpenAPI from Zod schemas using `@asteasolutions/zod-to-openapi`. Render the generated spec with Scalar using `@scalar/nextjs-api-reference`. Do not maintain hand-written OpenAPI YAML or route-comment documentation as a second source of truth.
@@ -149,11 +149,11 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 ---
 
 # ADR-015: Evaluate admin CRUD interface structure
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-04-28
 **Context:** Admin users need create, update, and delete flows for countries, annual emissions, and sector shares. The interface should stay simple enough for a take-home while remaining clear to reviewers.
-**Decision:** Pending. Options to compare: one combined admin page, tabbed sections, or separate admin subpages.
-**Consequence:** This decision will affect admin usability, routing complexity, and test coverage.
+**Decision:** Use a single protected `/admin` route with tabbed record sections for countries, annual emissions, and sector shares. Each tab owns its table, create action, pagination, and row edit/delete controls.
+**Consequence:** Admin CRUD stays reviewer-friendly and avoids route sprawl, while the page must keep strong table hierarchy, responsive overflow handling, and clear destructive-action separation so the combined surface does not become visually crowded.
 
 ---
 
@@ -246,3 +246,13 @@ Append at the end with the next sequential number. Set status to `Proposed` duri
 **Context:** ADR-023 gated chart mounting on a positive host measurement, but Recharts `ResponsiveContainer` still performs its own bootstrap render with `initialDimension = { width: -1, height: -1 }` unless told otherwise. In practice that means the dashboard can still emit the same `width(-1)` / `height(-1)` warning during first mount or Fast Refresh even when the outer wrapper already knows the real host size.
 **Decision:** Keep the measured wrapper, but also pass Recharts an explicit `initialDimension` derived from the wrapper's current measured host width and height. The wrapper should only mount the chart after it has a positive host size, and it should seed `ResponsiveContainer` with that same size on first render.
 **Consequence:** Recharts no longer boots from its `-1 / -1` sentinel dimensions inside this dashboard, so the console warning is eliminated rather than merely delayed. The wrapper becomes slightly more stateful because it tracks the measured size in addition to readiness, but the behavior is deterministic across normal mount and HMR refreshes.
+
+---
+
+# ADR-026: Keep OpenAPI as a tested contract document
+**Status:** Accepted
+**Supersedes:** ADR-012
+**Date:** 2026-05-20
+**Context:** The original B14 plan said OpenAPI would be generated from Zod schemas, but the implementation uses a hand-maintained OpenAPI 3.1 JSON document in `src/lib/openapi.ts` with focused tests. Adding a generator after submission would introduce late dependency and contract risk.
+**Decision:** Keep the current OpenAPI document as a tested API contract, render it with Scalar, and keep runtime validation in Zod route schemas. OpenAPI tests must cover required paths, envelopes, errors, enums, year bounds, nullable fields, and write operation IDs so contract drift is caught.
+**Consequence:** The documentation no longer overclaims Zod generation. There is still some duplication between Zod validation and OpenAPI schemas, but the duplication is explicit, tested, and lower risk than adding a new generator late in the assignment cycle.

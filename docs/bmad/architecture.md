@@ -13,7 +13,7 @@
 - react-simple-maps for world map
 - Auth.js with GitHub OAuth
 - Zod validation
-- Zod-generated OpenAPI docs rendered with Scalar
+- OpenAPI 3.1 docs rendered with Scalar
 - Vercel deployment
 
 ## Layers

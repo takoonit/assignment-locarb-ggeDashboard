@@ -3,7 +3,7 @@
 **Project:** Greenhouse Gas Emissions Dashboard & API
 **Owner:** Takoon
 **Source:** Notion `07 - Tasks`
-**Status:** BMAD implementation in progress; next story is B13
+**Status:** Assignment delivery complete; review-fix branch in progress
 
 ---
 
@@ -28,6 +28,8 @@ Use this section first. The detailed task tables below are the source of accepta
 - B1-B4: Epic 1 (Scaffold, Prisma, Seed, Auth) is complete.
 - B5-B7, B14: Epic 2 (API Read/Write, Error Wrapper, Docs) is complete.
 - B8-B12: Epic 3 (Dashboard) is complete.
+- B13: Epic 4 (Admin CRUD) is complete.
+- B15-B16: Epic 6 (README and deployment smoke evidence) is complete.
 - P1-P5: pre-BMAD cleanup is complete.
 - BMAD readiness gate is green.
 - Main Notion checklist is synced with the repo.
@@ -36,16 +38,11 @@ Use this section first. The detailed task tables below are the source of accepta
 
 ## Next
 
-- B13 - Admin CRUD page
-  - Active BMAD story: `docs/bmad/stories/epic-4/story-b13-admin-crud-page.md`.
-  - Resume pointer: `docs/bmad/current.md`.
-  - Implement the protected admin CRUD page.
+- Merge review-fix branch after validation.
 
 ## Not Started
 
-- B13 - Admin CRUD page
-- B15 - README
-- B16 - Deploy + smoke test
+- None for committed assignment scope.
 
 ## Backlog
 
@@ -75,7 +72,7 @@ BMAD implementation may start only when every item below is checked.
 | README aligned | Checked | `README.md` references existing planning docs, includes `TASK.md`, and clarifies that implementation begins at B1. |
 | Notion and repo synced | Checked | Main Notion checklist now matches repo readiness state and points to `07 - Tasks` / `TASK.md`. |
 
-Current gate status: BMAD implementation in progress. Continue from story B13.
+Current gate status: assignment delivery complete; review-fix branch is tightening reviewer-facing evidence and data hygiene.
 
 ---
 
@@ -129,10 +126,10 @@ Build order after docs are final.
 | B10 | World map | Done | B5, B8 | Year/gas selection works. No-data countries use distinct color. |
 | B11 | Sector bar chart | Done | B5, B8 | Sector shares render for the selected dashboard country/year. Null and zero values are handled safely. |
 | B12 | Gas filter | Done | B9-B11 | Single-select gas filter controls trend/map and URL state. |
-| B13 | Admin CRUD page | Next | B7, B8 | `/admin` route is protected by `requireAdmin`; create/edit/delete forms work. |
-| B14 | OpenAPI + Scalar docs | Done | B5, B7 | Zod schemas generate `GET /api/openapi`; Scalar renders `GET /api/docs`; docs cover endpoints, params, bodies, responses, and errors without manual YAML. |
-| B15 | README | Todo | B1-B14 | Setup, env vars, seed, run, API docs, screenshots, tradeoffs, and live URL are documented. |
-| B16 | Deploy + smoke test | Todo | B15 | Vercel live URL works. Dashboard, APIs, seed, and auth are verified. |
+| B13 | Admin CRUD page | Done | B7, B8 | `/admin` route is protected by `requireAdmin`; create/edit/delete forms work. |
+| B14 | OpenAPI + Scalar docs | Done | B5, B7 | `GET /api/openapi` returns OpenAPI 3.1 JSON; Scalar renders `GET /api/docs`; docs cover endpoints, params, bodies, responses, and errors without manual YAML. |
+| B15 | README | Done | B1-B14 | Setup, env vars, seed, run, API docs, screenshots, tradeoffs, and live URL are documented. |
+| B16 | Deploy + smoke test | Done | B15 | Vercel live URL works. Dashboard, APIs, seed, and auth are verified. |
 
 ---
 
